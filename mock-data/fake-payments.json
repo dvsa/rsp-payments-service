@@ -1,0 +1,40 @@
+[
+    {
+      "ID": "820500000877_FPN",
+      "Status": "PAID",
+      "PenaltyAmount": 200,
+      "PenaltyType": "FPN",
+      "Payment" : {
+        "PaymentRef": "12345678",
+        "ConfirmationCode": "A8B9C0A0FF",
+        "AuthCode": "ABC123DEF",
+        "PaymentAmount": 200
+      }
+    },
+    {
+      "ID": "820500000878_FPN",
+      "Status": "PAID",
+      "PenaltyAmount": 450,
+      "PenaltyType": "FPN",
+      "Payment" : {
+        "PaymentRef": "12345670",
+        "ConfirmationCode": "A8BBC0A0FE",
+        "AuthCode": "ABC123DFF",
+        "PaymentAmount": 450
+      }
+    },
+    {
+      "ID": "820500000879_FPN",
+      "Status": "UNPAID",
+      "PenaltyAmount": 150,
+      "PenaltyType": "FPN",
+      "Payment": {}
+    },
+    {
+      "ID": "820500000880_FPN",
+      "Status": "UNPAID",
+      "PenaltyAmount": 375,
+      "PenaltyType": "FPN",
+      "Payment": {}
+    }
+]

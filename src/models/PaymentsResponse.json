@@ -1,0 +1,27 @@
+{
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": [
+      "id",
+      "status"
+    ],  
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "status": {
+        "type": "string"
+      },
+      "reference": {
+        "type": "string"
+      },
+      "amount": {
+        "type": "integer"
+      },
+      "date": {
+        "type": "integer"
+      }
+    }
+  }
+}

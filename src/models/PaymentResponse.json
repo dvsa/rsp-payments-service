@@ -1,0 +1,47 @@
+{
+  "type": "object",
+  "required": [
+    "ID",
+    "Status",
+    "PenaltyAmount",
+    "PenaltyType",
+    "Payment"
+  ],  
+  "properties": {
+    "ID": {
+      "type": "string"
+    },
+    "Status": {
+      "type": "string"
+    },
+    "PenaltyAmount": {
+      "type": "integer"
+    },
+    "PenaltyType": {
+      "type": "string"
+    },
+    "updatedAt": {
+      "type": "integer"
+    },
+    "Payment": {
+      "type": "object",
+      "properties": {
+        "PaymentRef": {
+          "type": "string"
+        },
+        "AuthCode": {
+          "type": "string"
+        },
+        "PaymentAmount": {
+          "type": "integer"
+        },
+        "ConfirmationCode": {
+          "type": "string"
+        },
+        "PaymentDate": {
+          "type": "integer"
+        }
+      }
+    }
+  }
+}

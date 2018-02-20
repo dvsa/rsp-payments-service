@@ -1,0 +1,13 @@
+{
+  "type": "object",
+  "required": [
+    "statusCode"
+  ],
+  "properties": {
+    "statusCode": {
+      "type": "integer"},
+	"errorMessage": {
+	  "type": "string"
+    }
+  }
+}
