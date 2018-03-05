@@ -11,7 +11,6 @@ const payments = new Payments(
 export default (event, context, callback) => {
 
 	const data = JSON.parse(event.body);
-
-	payments.update(event.pathParameters.id, data, callback);
+	payments.batchFetch(data.ids, callback);
 
 };

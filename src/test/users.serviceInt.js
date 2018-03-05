@@ -1,18 +1,18 @@
 import supertest from 'supertest';
 import expect from 'expect';
 
-import users from '../../mock-data/fake-users.json';
+import payments from '../../mock-data/fake-payments.json';
 
-const url = 'http://localhost:3000/users';
+const url = 'http://localhost:3000/payments';
 const request = supertest(url);
 
-describe('users', () => {
+describe('payments', () => {
 
 	context('GET', () => {
 
-		context('all users', () => {
+		context('all payments', () => {
 
-			it('should return all users', (done) => {
+			it('should return all payments', (done) => {
 
 				request
 					.get('/')
@@ -22,7 +22,7 @@ describe('users', () => {
 					.expect('Content-Type', 'application/json')
 					.end((err, res) => {
 						if (err) throw err;
-						expect(res.body.users.length).toEqual(4);
+						expect(res.body.payments.length).toEqual(4);
 						done();
 					});
 
@@ -45,21 +45,21 @@ describe('users', () => {
 
 		});
 
-		context('one user', () => {
+		context('one payment', () => {
 
-			it('should return the correct user', (done) => {
+			it('should return the correct payment', (done) => {
 
-				const expectedUser = users.filter(user => user.id === '1')[0];
+				const expectedPayment = payments.filter(payment => payment.ID === '820500000877_FPN')[0];
 
 				request
-					.get('/1')
+					.get('/820500000877_FPN')
 					.set('Context-Type', 'application/json')
 					.set('authorization', 'allow')
 					.expect(200)
 					.expect('Content-Type', 'application/json')
 					.end((err, res) => {
 						if (err) throw err;
-						expect(res.body.user).toEqual(expectedUser);
+						expect(res.body.payment).toEqual(expectedPayment);
 						done();
 					});
 			});
@@ -68,45 +68,12 @@ describe('users', () => {
 
 	});
 
-	context('PUT', () => {
-
-		context('Create new user', () => {
-
-			it('returns the newly created user', (done) => {
-
-				request
-					.put('/')
-					.set('Context-Type', 'application/json')
-					.set('authorization', 'allow')
-					.send({
-						name: 'Michael',
-						role: 'admin',
-					})
-					.expect(200)
-					.expect('Content-Type', 'application/json')
-					.end((err, res) => {
-						if (err) throw err;
-						expect(res.body.user.name).toEqual('Michael');
-						expect(res.body.user.role).toEqual('admin');
-						return request
-							.get('/')
-							.set('authorization', 'allow')
-							.end((_err, _res) => {
-								if (_err) throw _err;
-								expect(_res.body.users.length).toEqual(5);
-								done();
-							});
-					});
-			});
-		});
-	});
-
 	context('DELETE', () => {
 
 		it('should return a 200 response and an empty object', (done) => {
 
 			request
-				.delete('/2')
+				.delete('/820500000877_FPN')
 				.set('Context-Type', 'application/json')
 				.set('authorization', 'allow')
 				.expect(200)
@@ -118,7 +85,7 @@ describe('users', () => {
 						.set('authorization', 'allow')
 						.end((_err, _res) => {
 							if (_err) throw _err;
-							expect(_res.body.users.length).toEqual(4);
+							expect(_res.body.payments.length).toEqual(3);
 							done();
 						});
 				});

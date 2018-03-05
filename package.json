@@ -11,7 +11,6 @@
     "presetup": "npm run copy-localfiles",
     "offline": "cd ./build && sls openapi generate -f json && npm run openapireplace && sls offline start --noAuth",
     "offline-with-auth": "cd ./build && sls openapi generate -f json && npm run openapireplace && sls offline start",
-    "prepush": "npm run lint && npm test",
     "lint": "./node_modules/.bin/eslint src",
     "watch": "./node_modules/.bin/nodemon --watch src --exec npm run compile",
     "compile": "./node_modules/.bin/babel src -d build",
@@ -25,14 +24,17 @@
     "copy-mockdata": "./node_modules/.bin/copyfiles mock-data/*.json build",
     "copy-models": "./node_modules/.bin/copyfiles -f src/models/*.json build/models",
     "copy-package": "./node_modules/.bin/copyfiles package.json build/",
-    "copy-openapi": "./node_modules/.bin/copyfiles openapiReplace.js build/",    
+    "copy-openapi": "./node_modules/.bin/copyfiles openapiReplace.js build/",
     "deploy-AWS": "npm run copy-package && npm run copy-sls && cd ./build && npm install --production && sls deploy",
     "openapireplace": "node openapiReplace.js",
     "start-build": "rm -rf build && npm run copy-localfiles && npm run compile && npm run copy-package && npm run build-node-modules && npm run post-build-cleanup && npm run build-artifact && rm -f build/serverless.yml",
     "build-node-modules": "cd build && npm install --production",
     "build-artifact": "cd build && rm -rf artifacts && pwd && sls package --package artifacts",
     "build-openApi": "cd build && sls openapi generate -f json && npm run openapireplace",
-    "post-build-cleanup": "rm -rf build/mock-data && rm -f build/package.json && rm -f build/openApiReplace.js && rm -f build/package-lock.json"    
+    "post-build-cleanup": "rm -rf build/mock-data && rm -f build/package.json && rm -f build/openApiReplace.js && rm -f build/package-lock.json",
+    "prepush": "npm run lint && npm test && npm run check-security",
+    "check-security": "git secrets --scan",
+    "check-security-log": "git log -p | scanrepo"   
   },
   "devDependencies": {
     "babel-cli": "~6.18.0",
@@ -62,6 +64,7 @@
   "dependencies": {
     "aws-sdk": "^2.140.0",
     "joi": "^13.1.2",
+    "request-promise": "^4.2.2",
     "serverless-dynamodb-client": "0.0.2",
     "uuid": "^3.1.0"
   }

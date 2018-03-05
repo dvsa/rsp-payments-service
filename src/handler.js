@@ -4,7 +4,7 @@ import get from './functions/get';
 import create from './functions/create';
 import remove from './functions/delete';
 import update from './functions/update';
-import getToken from './functions/getToken';
+import batchFetch from './functions/batchFetch';
 
 const handler = {
 	auth,
@@ -13,7 +13,7 @@ const handler = {
 	create,
 	remove,
 	update,
-	getToken,
+	batchFetch,
 };
 
 export default handler;

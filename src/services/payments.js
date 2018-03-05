@@ -1,15 +1,83 @@
 /* eslint class-methods-use-this: "off" */
 /* eslint-env es6 */
+import AWS from 'aws-sdk';
 import Joi from 'joi';
 import createResponse from '../utils/createResponse';
 import paymentValidation from '../validationModels/paymentValidation';
 
-export default class Payments {
+const lambda = new AWS.Lambda({ region: 'eu-west-1' });
 
-	constructor(db, tableName, decryptArn) {
+export default class Payments {
+	constructor(db, tableName, decryptArn, documentUpdateArn) {
 		this.db = db;
 		this.tableName = tableName;
 		this.decryptArn = decryptArn;
+		this.documentUpdateArn = documentUpdateArn;
+	}
+
+	// updateDocument(id, payment) {
+	// 	const url = `${this.documentURL}/document/${id}`;
+	// 	console.log(`url ${url}`);
+	// 	const options = {
+	// 		method: 'PUT',
+	// 		url,
+	// 		body: { payment },
+	// 		headers: { Authorization: 'allow' },
+	// 		json: true,
+	// 	};
+
+	// 	return request(options);
+	// }
+
+	batchFetch(idList, callback) {
+		let response;
+		let error;
+		const keys = [];
+		idList.forEach((element) => {
+			console.log(element);
+			keys.push({ ID: element });
+			// keys.push({ ID: { S: element } });
+		});
+
+		console.log(`${keys.length}`);
+		const params = {
+			RequestItems: {
+				paymentsTable: {
+					Keys: keys,
+					ProjectionExpression: 'ID, PaymentDetail, PenaltyAmount, PenaltyType, PenaltyStatus, PaymentOffset',
+				},
+			},
+		};
+
+		console.log(JSON.stringify(params, null, 2));
+
+		console.log('batchFetching paymentsTable..');
+
+		this.db.batchGet(params, onBatch);
+
+		function onBatch(err, data) {
+			if (err) {
+				error = createResponse({
+					body: {
+						err,
+					},
+					statusCode: 500,
+				});
+				console.log(JSON.stringify(error, null, 2));
+				callback(error);
+			} else {
+				console.log(JSON.stringify(data, null, 2));
+				const payments = data.Responses.paymentsTable;
+				// return payments
+				response = createResponse({
+					body: {
+						payments,
+					},
+				});
+				callback(null, response);
+			}
+		}
+
 	}
 
 	list(callback) {
@@ -34,6 +102,7 @@ export default class Payments {
 				});
 				callback(error);
 			} else {
+				console.log(JSON.stringify(data, null, 2));
 				const payments = data.Items;
 				// return payments
 				response = createResponse({
@@ -89,11 +158,11 @@ export default class Payments {
 			TableName: this.tableName,
 			Item: {
 				ID: body.ID,
-				Status: body.Status,
+				PenaltyStatus: body.PenaltyStatus,
 				PenaltyAmount: body.PenaltyAmount,
 				PenaltyType: body.PenaltyType,
-				Payment: body.Payment,
-				date: timestamp,
+				PaymentDetail: body.PaymentDetail,
+				PaymentOffset: timestamp,
 			},
 		};
 
@@ -120,6 +189,25 @@ export default class Payments {
 					body: {
 						payment: params.Item,
 					},
+				});
+
+				// this.updateDocument(params.Item.ID, params.Item)
+				// 	.then((documentResponse) => {
+				// 		const outputResponse = JSON.stringify(documentResponse, null, 2);
+				// 		console.log(`outputResponse from document update ${outputResponse}`);
+				// 	});
+				// TODO replace with lambda to lambda
+				lambda.invoke({
+					FunctionName: this.documentUpdateArn,
+					Payload: `{"body": { "id": "${body.id}", "paymentStatus": "${body.PenaltyStatus}" } }`,
+				}, (lambdaError, data) => {
+					if (lambdaError) {
+						console.log('Document service returned an error');
+						console.log(JSON.stringify(lambdaError, null, 2));
+						callback(null, createResponse({ statusCode: 400, error: lambdaError }));
+					} else if (data.Payload) {
+						callback(null, response);
+					}
 				});
 				callback(null, response);
 			});
