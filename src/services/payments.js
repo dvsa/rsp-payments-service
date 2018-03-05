@@ -44,7 +44,7 @@ export default class Payments {
 			RequestItems: {
 				paymentsTable: {
 					Keys: keys,
-					ProjectionExpression: 'ID, PaymentDetail, PenaltyAmount, PenaltyType, PenaltyStatus, PaymentOffset',
+					ProjectionExpression: 'ID, PaymentDetail, PenaltyStatus',
 				},
 			},
 		};
@@ -149,20 +149,49 @@ export default class Payments {
 
 	}
 
+	constructID(penaltyReference, penaltyType) {
+		if (typeof penaltyReference === 'undefined' || typeof penaltyType === 'undefined') {
+			return '';
+		}
+
+		if (penaltyType === 'IM') {
+			const matches = this.penaltyReferenceNo.match(/^([0-9]{1,6})-([0-1])-([0-9]{1,6})$/);
+
+			let initialSegment = 0;
+			let lastSegment = 0;
+			let middleSegment = 0;
+
+			if (matches.length > 3) {
+				initialSegment = Number(matches[1]);
+				middleSegment = Number(matches[2]);
+				lastSegment = Number(matches[3]);
+				if (initialSegment === 0 || lastSegment === 0 || (middleSegment > 1 || middleSegment < 0)) {
+					return '';
+				}
+				const initialOutput = '000000'.slice(initialSegment.toString().length) + initialSegment.toString();
+				const middleOutput = middleSegment.toString();
+				const lastOutput = '000000'.slice(lastSegment.toString().length) + lastSegment.toString();
+				return `${initialOutput}${middleOutput}${lastOutput}`;
+			}
+		} else {
+			return `${penaltyReference}_${penaltyType}`;
+		}
+
+		return '';
+	}
+
 	create(body, callback) {
 		let error;
 		let response;
-		const timestamp = new Date().getTime();
+
+		const constructedID = this.constructID(body.penaltyReference, body.penaltyType);
 
 		const params = {
 			TableName: this.tableName,
 			Item: {
-				ID: body.ID,
+				ID: constructedID,
 				PenaltyStatus: body.PenaltyStatus,
-				PenaltyAmount: body.PenaltyAmount,
-				PenaltyType: body.PenaltyType,
 				PaymentDetail: body.PaymentDetail,
-				PaymentOffset: timestamp,
 			},
 		};
 
