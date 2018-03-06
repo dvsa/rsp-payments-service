@@ -291,9 +291,6 @@ export default class Payments {
 		let message;
 		let error;
 		let response;
-
-		const timestamp = new Date().getTime();
-
 		const params = {
 			TableName: this.tableName,
 			Key: { ID: id },
@@ -308,9 +305,8 @@ export default class Payments {
 				':PenaltyAmount': body.PenaltyAmount,
 				':PenaltyType': body.PenaltyType,
 				':Payment': body.Payment,
-				':updatedAt': timestamp,
 			},
-			UpdateExpression: 'SET #Status = :Status, #PenaltyAmount = :PenaltyAmount, #PenaltyType = :PenaltyType, #Payment = :Payment, updatedAt = :updatedAt',
+			UpdateExpression: 'SET #Status = :Status, #PenaltyAmount = :PenaltyAmount, #PenaltyType = :PenaltyType, #Payment = :Payment',
 			ReturnValues: 'ALL_NEW',
 		};
 
