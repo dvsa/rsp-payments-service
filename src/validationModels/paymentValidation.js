@@ -12,9 +12,10 @@ const paymentDetailsSchema = {
 export default {
 	request: Joi.object().keys({
 		ID: Joi.string().regex(/^[0-9]{12,13}_(IM|CDN|FPN)$/).required(),
-		Status: Joi.string().regex(/^(PAID|UNPAID)$/).required(),
+		PenaltyStatus: Joi.string().regex(/^(PAID|UNPAID)$/).required(),
 		PenaltyAmount: Joi.number().integer().required(),
 		PenaltyType: Joi.string().regex(/^(IM|CDN|FPN)$/).required(),
-		Payment: Joi.object(paymentDetailsSchema).required(),
+		PaymentDetail: Joi.object(paymentDetailsSchema).required(),
+		PaymentOffset: Joi.number().integer().required(),
 	}),
 };
