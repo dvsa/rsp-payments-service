@@ -155,12 +155,15 @@ export default class Payments {
 		}
 
 		if (penaltyType === 'IM') {
-			const matches = this.penaltyReferenceNo.match(/^([0-9]{1,6})-([0-1])-([0-9]{1,6})$/);
+			const matches = penaltyReference.match(/^([0-9]{1,6})-([0-1])-([0-9]{1,6})$/);
 
 			let initialSegment = 0;
 			let lastSegment = 0;
 			let middleSegment = 0;
 
+			if (matches === null) {
+				return '';
+			}
 			if (matches.length > 3) {
 				initialSegment = Number(matches[1]);
 				middleSegment = Number(matches[2]);
@@ -171,7 +174,7 @@ export default class Payments {
 				const initialOutput = '000000'.slice(initialSegment.toString().length) + initialSegment.toString();
 				const middleOutput = middleSegment.toString();
 				const lastOutput = '000000'.slice(lastSegment.toString().length) + lastSegment.toString();
-				return `${initialOutput}${middleOutput}${lastOutput}`;
+				return `${initialOutput}${middleOutput}${lastOutput}_IM`;
 			}
 		} else {
 			return `${penaltyReference}_${penaltyType}`;
@@ -184,7 +187,7 @@ export default class Payments {
 		let error;
 		let response;
 
-		const constructedID = this.constructID(body.penaltyReference, body.penaltyType);
+		const constructedID = this.constructID(body.PenaltyReference, body.PenaltyType);
 
 		const params = {
 			TableName: this.tableName,
@@ -196,7 +199,17 @@ export default class Payments {
 		};
 
 		const checkTest = this.validatePayment(body, paymentValidation);
-		if (!checkTest.valid) {
+		console.log(`constructedID: (${constructedID})`);
+		if (constructedID === '') {
+			const err = 'Invalid Id';
+			const errorToReturn = createResponse({
+				body: {
+					err,
+				},
+				statusCode: 405,
+			});
+			callback(null, errorToReturn);
+		} else if (!checkTest.valid) {
 			callback(null, checkTest.response);
 		} else {
 

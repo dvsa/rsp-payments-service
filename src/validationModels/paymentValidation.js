@@ -10,7 +10,8 @@ const paymentDetailsSchema = {
 
 export default {
 	request: Joi.object().keys({
-		ID: Joi.string().regex(/^[0-9]{12,13}_(IM|CDN|FPN)$/).required(),
+		PenaltyReference: Joi.string().required(),
+		PenaltyType: Joi.string().regex(/^(IM|CDN|FPN)$/).required(),
 		PenaltyStatus: Joi.string().regex(/^(PAID|UNPAID)$/).required(),
 		PaymentDetail: Joi.object(paymentDetailsSchema).required(),
 	}),
