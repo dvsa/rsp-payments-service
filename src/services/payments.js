@@ -187,7 +187,7 @@ export default class Payments {
 		let error;
 		let response;
 
-		const constructedID = this.constructID(body.PenaltyReference, body.PenaltyType);
+		const constructedID = `${body.PenaltyReference}_${body.PenaltyType}`; // this.constructID(body.PenaltyReference, body.PenaltyType);
 
 		const params = {
 			TableName: this.tableName,
