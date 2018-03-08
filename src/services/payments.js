@@ -233,15 +233,9 @@ export default class Payments {
 					},
 				});
 
-				// this.updateDocument(params.Item.ID, params.Item)
-				// 	.then((documentResponse) => {
-				// 		const outputResponse = JSON.stringify(documentResponse, null, 2);
-				// 		console.log(`outputResponse from document update ${outputResponse}`);
-				// 	});
-				// TODO replace with lambda to lambda
 				lambda.invoke({
 					FunctionName: this.documentUpdateArn,
-					Payload: `{"body": { "id": "${body.id}", "paymentStatus": "${body.PenaltyStatus}" } }`,
+					Payload: `{"body": { "id": "${constructedID}", "paymentStatus": "${body.PenaltyStatus}" } }`,
 				}, (lambdaError, data) => {
 					if (lambdaError) {
 						console.log('Document service returned an error');
