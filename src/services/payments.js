@@ -233,9 +233,11 @@ export default class Payments {
 					},
 				});
 
+				const payItem = params.Item;
+
 				lambda.invoke({
 					FunctionName: this.documentUpdateArn,
-					Payload: `{"body": { "id": "${constructedID}", "paymentStatus": "${body.PenaltyStatus}" } }`,
+					Payload: `{"body": { "id": "${constructedID}", "paymentStatus": "${body.PenaltyStatus}", "paymentAmount": "${payItem.PaymentDetail.PaymentAmount}","penaltyRefNo": "${body.PenaltyReference}", "penaltyType":"${body.PenaltyType}" } }`,
 				}, (lambdaError, data) => {
 					if (lambdaError) {
 						console.log('Document service returned an error');
@@ -348,3 +350,4 @@ export default class Payments {
 	}
 
 }
+
