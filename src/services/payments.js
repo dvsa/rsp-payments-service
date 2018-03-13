@@ -152,11 +152,7 @@ export default class Payments {
 			if (matches === null) {
 				return '';
 			}
-			let retReference = `${penaltyReference}_${penaltyType}`;
-			if (penaltyReference.length < 12 || penaltyReference.length > 13) {
-				retReference = '';
-			}
-			return retReference;
+			return `${penaltyReference}_${penaltyType}`;
 		}
 
 		return '';
