@@ -15,31 +15,15 @@ export default class Payments {
 		this.documentUpdateArn = documentUpdateArn;
 	}
 
-	// updateDocument(id, payment) {
-	// 	const url = `${this.documentURL}/document/${id}`;
-	// 	console.log(`url ${url}`);
-	// 	const options = {
-	// 		method: 'PUT',
-	// 		url,
-	// 		body: { payment },
-	// 		headers: { Authorization: 'allow' },
-	// 		json: true,
-	// 	};
-
-	// 	return request(options);
-	// }
-
 	batchFetch(idList, callback) {
 		let response;
 		let error;
 		const keys = [];
 		idList.forEach((element) => {
-			console.log(element);
 			keys.push({ ID: element });
 			// keys.push({ ID: { S: element } });
 		});
 
-		console.log(`${keys.length}`);
 		const params = {
 			RequestItems: {
 				paymentsTable: {
@@ -48,10 +32,6 @@ export default class Payments {
 				},
 			},
 		};
-
-		console.log(JSON.stringify(params, null, 2));
-
-		console.log('batchFetching paymentsTable..');
 
 		this.db.batchGet(params, onBatch);
 
@@ -63,10 +43,8 @@ export default class Payments {
 					},
 					statusCode: 500,
 				});
-				console.log(JSON.stringify(error, null, 2));
 				callback(error);
 			} else {
-				console.log(JSON.stringify(data, null, 2));
 				const payments = data.Responses.paymentsTable;
 				// return payments
 				response = createResponse({
@@ -88,8 +66,6 @@ export default class Payments {
 			TableName: this.tableName,
 		};
 
-		console.log('Scanning paymentsTable..');
-
 		this.db.scan(params, onScan);
 
 		function onScan(err, data) {
@@ -102,7 +78,6 @@ export default class Payments {
 				});
 				callback(error);
 			} else {
-				console.log(JSON.stringify(data, null, 2));
 				const payments = data.Items;
 				// return payments
 				response = createResponse({
@@ -128,7 +103,6 @@ export default class Payments {
 		this.db.get(params, (err, data) => {
 
 			if (err) {
-				console.log(JSON.stringify(err, null, 2));
 				error = createResponse({
 					body: {
 						err,
@@ -155,7 +129,7 @@ export default class Payments {
 		}
 
 		if (penaltyType === 'IM') {
-			const matches = penaltyReference.match(/^([0-9]{1,6})-([0-1])-([0-9]{1,6})$/);
+			const matches = penaltyReference.match(/^([0-9]{6})([0-1])([0-9]{6})$/);
 
 			let initialSegment = 0;
 			let lastSegment = 0;
@@ -171,12 +145,13 @@ export default class Payments {
 				if (initialSegment === 0 || lastSegment === 0 || (middleSegment > 1 || middleSegment < 0)) {
 					return '';
 				}
-				const initialOutput = '000000'.slice(initialSegment.toString().length) + initialSegment.toString();
-				const middleOutput = middleSegment.toString();
-				const lastOutput = '000000'.slice(lastSegment.toString().length) + lastSegment.toString();
-				return `${initialOutput}${middleOutput}${lastOutput}_IM`;
+				return `${penaltyReference}_IM`;
 			}
 		} else {
+			const matches = penaltyReference.match(/^([0-9]{12,13})$/);
+			if (matches === null) {
+				return '';
+			}
 			return `${penaltyReference}_${penaltyType}`;
 		}
 
@@ -199,7 +174,6 @@ export default class Payments {
 		};
 
 		const checkTest = this.validatePayment(body, paymentValidation);
-		console.log(`constructedID: (${constructedID})`);
 		if (constructedID === '') {
 			const err = 'Invalid Id';
 			const errorToReturn = createResponse({
@@ -217,7 +191,7 @@ export default class Payments {
 			this.db.put(params, (err) => {
 				// handle potential errors
 				if (err) {
-					console.error(error);
+					console.error(JSON.stringify(err, null, 2));
 					error = createResponse({
 						body: {
 							err,
@@ -240,8 +214,6 @@ export default class Payments {
 					Payload: `{"body": { "id": "${constructedID}", "paymentStatus": "${body.PenaltyStatus}", "paymentAmount": "${payItem.PaymentDetail.PaymentAmount}","penaltyRefNo": "${body.PenaltyReference}", "penaltyType":"${body.PenaltyType}" } }`,
 				}, (lambdaError, data) => {
 					if (lambdaError) {
-						console.log('Document service returned an error');
-						console.log(JSON.stringify(lambdaError, null, 2));
 						callback(null, createResponse({ statusCode: 400, error: lambdaError }));
 					} else if (data.Payload) {
 						callback(null, response);
@@ -291,18 +263,16 @@ export default class Payments {
 			TableName: this.tableName,
 			Key: { ID: id },
 			ExpressionAttributeNames: {
-				'#Status': 'Status',
-				'#PenaltyAmount': 'PenaltyAmount',
+				'#PenaltyStatus': 'PenaltyStatus',
 				'#PenaltyType': 'PenaltyType',
-				'#Payment': 'Payment',
+				'#PaymentDetail': 'PaymentDetail',
 			},
 			ExpressionAttributeValues: {
-				':Status': body.Status,
-				':PenaltyAmount': body.PenaltyAmount,
+				':PenaltyStatus': body.PenaltyStatus,
 				':PenaltyType': body.PenaltyType,
-				':Payment': body.Payment,
+				':PaymentDetail': body.PaymentDetail,
 			},
-			UpdateExpression: 'SET #Status = :Status, #PenaltyAmount = :PenaltyAmount, #PenaltyType = :PenaltyType, #Payment = :Payment',
+			UpdateExpression: 'SET #PenaltyStatus = :PenaltyStatus, #PenaltyType = :PenaltyType, #PaymentDetail = :PaymentDetail',
 			ReturnValues: 'ALL_NEW',
 		};
 
@@ -310,11 +280,8 @@ export default class Payments {
 		if (!checkTest.valid) {
 			callback(null, checkTest.response);
 		} else {
-		// update the todo in the database
 			this.db.update(params, (err, result) => {
-				// handle potential errors
 				if (err) {
-					console.error(err);
 					error = createResponse({
 						message,
 						statusCode: err.statusCode || 501,
@@ -322,7 +289,6 @@ export default class Payments {
 					});
 					callback(error);
 				}
-				// create a response
 				response = createResponse({
 					statusCode: 200,
 					body: result.Attributes,
@@ -335,7 +301,6 @@ export default class Payments {
 
 	validatePayment(data, paymentValidationModel) {
 		const validationResult = Joi.validate(data, paymentValidationModel.request);
-		console.log(JSON.stringify(validationResult, null, 2));
 		if (validationResult.error) {
 			const err = 'Invalid Input';
 			const error = createResponse({
@@ -345,8 +310,26 @@ export default class Payments {
 				statusCode: 405,
 			});
 			return { valid: false, response: error };
+		} else if (data.PenaltyReference) {
+			if (!this.validatePaymentRef(data.PenaltyReference, data.PenaltyType)) {
+				const err = 'Invalid Payment Reference';
+				const error = createResponse({
+					body: {
+						err,
+					},
+					statusCode: 405,
+				});
+				return { valid: false, response: error };
+			}
 		}
 		return { valid: true, response: {} };
+	}
+
+	validatePaymentRef(penaltyReference, penaltyType) {
+		if (this.constructID(penaltyReference, penaltyType) === '') {
+			return false;
+		}
+		return true;
 	}
 
 }
