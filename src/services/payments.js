@@ -1,9 +1,10 @@
 /* eslint class-methods-use-this: "off" */
 /* eslint-env es6 */
 import AWS from 'aws-sdk';
-import Joi from 'joi';
+import Validation from 'rsp-validation';
+// import Joi from 'joi';
 import createResponse from '../utils/createResponse';
-import paymentValidation from '../validationModels/paymentValidation';
+// import paymentValidation from '../validationModels/paymentValidation';
 
 const lambda = new AWS.Lambda({ region: 'eu-west-1' });
 
@@ -173,7 +174,8 @@ export default class Payments {
 			},
 		};
 
-		const checkTest = this.validatePayment(body, paymentValidation);
+		const checkTest = Validation.paymentValidation(body);
+		// this.validatePayment(body, paymentValidation);
 		if (constructedID === '') {
 			const err = 'Invalid Id';
 			const errorToReturn = createResponse({
@@ -184,7 +186,14 @@ export default class Payments {
 			});
 			callback(null, errorToReturn);
 		} else if (!checkTest.valid) {
-			callback(null, checkTest.response);
+			const err = checkTest.error.message;
+			const validationError = createResponse({
+				body: {
+					err,
+				},
+				statusCode: 405,
+			});
+			callback(null, validationError);
 		} else {
 
 			// write the payment to the database
@@ -275,10 +284,17 @@ export default class Payments {
 			UpdateExpression: 'SET #PenaltyStatus = :PenaltyStatus, #PenaltyType = :PenaltyType, #PaymentDetail = :PaymentDetail',
 			ReturnValues: 'ALL_NEW',
 		};
-
-		const checkTest = this.validatePayment(body, paymentValidation);
+		const checkTest = Validation.paymentValidation(body);
+		// this.validatePayment(body, paymentValidation);
 		if (!checkTest.valid) {
-			callback(null, checkTest.response);
+			const err = checkTest.error.message;
+			const validationError = createResponse({
+				body: {
+					err,
+				},
+				statusCode: 405,
+			});
+			callback(null, validationError);
 		} else {
 			this.db.update(params, (err, result) => {
 				if (err) {
@@ -299,38 +315,38 @@ export default class Payments {
 
 	}
 
-	validatePayment(data, paymentValidationModel) {
-		const validationResult = Joi.validate(data, paymentValidationModel.request);
-		if (validationResult.error) {
-			const err = 'Invalid Input';
-			const error = createResponse({
-				body: {
-					err,
-				},
-				statusCode: 405,
-			});
-			return { valid: false, response: error };
-		} else if (data.PenaltyReference) {
-			if (!this.validatePaymentRef(data.PenaltyReference, data.PenaltyType)) {
-				const err = 'Invalid Payment Reference';
-				const error = createResponse({
-					body: {
-						err,
-					},
-					statusCode: 405,
-				});
-				return { valid: false, response: error };
-			}
-		}
-		return { valid: true, response: {} };
-	}
+	// validatePayment(data, paymentValidationModel) {
+	// 	const validationResult = Joi.validate(data, paymentValidationModel.request);
+	// 	if (validationResult.error) {
+	// 		const err = 'Invalid Input';
+	// 		const error = createResponse({
+	// 			body: {
+	// 				err,
+	// 			},
+	// 			statusCode: 405,
+	// 		});
+	// 		return { valid: false, response: error };
+	// 	} else if (data.PenaltyReference) {
+	// 		if (!this.validatePaymentRef(data.PenaltyReference, data.PenaltyType)) {
+	// 			const err = 'Invalid Payment Reference';
+	// 			const error = createResponse({
+	// 				body: {
+	// 					err,
+	// 				},
+	// 				statusCode: 405,
+	// 			});
+	// 			return { valid: false, response: error };
+	// 		}
+	// 	}
+	// 	return { valid: true, response: {} };
+	// }
 
-	validatePaymentRef(penaltyReference, penaltyType) {
-		if (this.constructID(penaltyReference, penaltyType) === '') {
-			return false;
-		}
-		return true;
-	}
+	// validatePaymentRef(penaltyReference, penaltyType) {
+	// 	if (this.constructID(penaltyReference, penaltyType) === '') {
+	// 		return false;
+	// 	}
+	// 	return true;
+	// }
 
 }
 

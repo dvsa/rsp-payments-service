@@ -3348,7 +3348,7 @@
     "hawk": {
       "version": "6.0.2",
       "resolved": "https://registry.npmjs.org/hawk/-/hawk-6.0.2.tgz",
-      "integrity": "sha512-miowhl2+U7Qle4vdLqDdPt9m09K6yZhkLDTWGoUiUzrQCn+mHHSmfJgAyGaLRZbPmTqfFFjRV1QWCW0VWUJBbQ==",
+      "integrity": "sha1-r02RTrBl+bXOTZ0RwcshJu7MMDg=",
       "requires": {
         "boom": "4.3.1",
         "cryptiles": "3.1.2",
@@ -6489,6 +6489,14 @@
         "node.flow": "1.2.3"
       }
     },
+    "rsp-validation": {
+      "version": "1.3.0",
+      "resolved": "https://registry.npmjs.org/rsp-validation/-/rsp-validation-1.3.0.tgz",
+      "integrity": "sha512-0wcM4NwT3oTymdKxDPWZ/N06U73CFAOMsVM++PSJcHlk2T1FhnxxAT84chyqldvV/kKEUbIyEYff/hR6+Do5aA==",
+      "requires": {
+        "joi": "13.1.2"
+      }
+    },
     "run-async": {
       "version": "2.3.0",
       "resolved": "https://registry.npmjs.org/run-async/-/run-async-2.3.0.tgz",
@@ -7112,7 +7120,7 @@
     "sntp": {
       "version": "2.1.0",
       "resolved": "https://registry.npmjs.org/sntp/-/sntp-2.1.0.tgz",
-      "integrity": "sha512-FL1b58BDrqS3A11lJ0zEdnJ3UOKqVxawAkF3k7F0CVN7VQ34aZrV+G8BZ1WC9ZL7NyrwsW0oviwsWDgRuVYtJg==",
+      "integrity": "sha1-LGzsFP7cIiJznK+bXD2F0cxaLMg=",
       "requires": {
         "hoek": "4.2.0"
       }
