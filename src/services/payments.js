@@ -314,39 +314,5 @@ export default class Payments {
 		}
 
 	}
-
-	// validatePayment(data, paymentValidationModel) {
-	// 	const validationResult = Joi.validate(data, paymentValidationModel.request);
-	// 	if (validationResult.error) {
-	// 		const err = 'Invalid Input';
-	// 		const error = createResponse({
-	// 			body: {
-	// 				err,
-	// 			},
-	// 			statusCode: 405,
-	// 		});
-	// 		return { valid: false, response: error };
-	// 	} else if (data.PenaltyReference) {
-	// 		if (!this.validatePaymentRef(data.PenaltyReference, data.PenaltyType)) {
-	// 			const err = 'Invalid Payment Reference';
-	// 			const error = createResponse({
-	// 				body: {
-	// 					err,
-	// 				},
-	// 				statusCode: 405,
-	// 			});
-	// 			return { valid: false, response: error };
-	// 		}
-	// 	}
-	// 	return { valid: true, response: {} };
-	// }
-
-	// validatePaymentRef(penaltyReference, penaltyType) {
-	// 	if (this.constructID(penaltyReference, penaltyType) === '') {
-	// 		return false;
-	// 	}
-	// 	return true;
-	// }
-
 }
 
