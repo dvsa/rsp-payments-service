@@ -168,7 +168,6 @@ export default class Payments {
 				PenaltyStatus: body.PenaltyStatus,
 				PaymentDetail: body.PaymentDetail,
 			},
-			ConditionExpression: 'attribute_not_exists(#ID)',
 		};
 
 		const checkTest = Validation.paymentValidation(body);
@@ -201,7 +200,7 @@ export default class Payments {
 						},
 						statusCode: 500,
 					});
-					callback(error);
+					callback(null, error);
 				}
 
 				response = createResponse({
