@@ -3,7 +3,7 @@ const replace = require('replace');
 replace({
 	regex: '"requestBody": {},',
 	replacement: '',
-	paths: ['openapi.json'],
+	paths: ['build/openapi.json'],
 	recursive: true,
 	silent: true,
 });

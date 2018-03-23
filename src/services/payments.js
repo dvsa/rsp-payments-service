@@ -1,9 +1,8 @@
 /* eslint class-methods-use-this: "off" */
 /* eslint-env es6 */
 import AWS from 'aws-sdk';
-import Joi from 'joi';
+import Validation from 'rsp-validation';
 import createResponse from '../utils/createResponse';
-import paymentValidation from '../validationModels/paymentValidation';
 
 const lambda = new AWS.Lambda({ region: 'eu-west-1' });
 
@@ -21,7 +20,6 @@ export default class Payments {
 		const keys = [];
 		idList.forEach((element) => {
 			keys.push({ ID: element });
-			// keys.push({ ID: { S: element } });
 		});
 
 		const params = {
@@ -46,7 +44,7 @@ export default class Payments {
 				callback(error);
 			} else {
 				const payments = data.Responses.paymentsTable;
-				// return payments
+
 				response = createResponse({
 					body: {
 						payments,
@@ -79,7 +77,7 @@ export default class Payments {
 				callback(error);
 			} else {
 				const payments = data.Items;
-				// return payments
+
 				response = createResponse({
 					body: {
 						payments,
@@ -162,8 +160,7 @@ export default class Payments {
 		let error;
 		let response;
 
-		const constructedID = `${body.PenaltyReference}_${body.PenaltyType}`; // this.constructID(body.PenaltyReference, body.PenaltyType);
-
+		const constructedID = `${body.PenaltyReference}_${body.PenaltyType}`;
 		const params = {
 			TableName: this.tableName,
 			Item: {
@@ -171,9 +168,11 @@ export default class Payments {
 				PenaltyStatus: body.PenaltyStatus,
 				PaymentDetail: body.PaymentDetail,
 			},
+			ConditionExpression: 'attribute_not_exists(#ID)',
 		};
 
-		const checkTest = this.validatePayment(body, paymentValidation);
+		const checkTest = Validation.paymentValidation(body);
+
 		if (constructedID === '') {
 			const err = 'Invalid Id';
 			const errorToReturn = createResponse({
@@ -184,14 +183,18 @@ export default class Payments {
 			});
 			callback(null, errorToReturn);
 		} else if (!checkTest.valid) {
-			callback(null, checkTest.response);
+			const err = checkTest.error.message;
+			const validationError = createResponse({
+				body: {
+					err,
+				},
+				statusCode: 405,
+			});
+			callback(null, validationError);
 		} else {
 
-			// write the payment to the database
 			this.db.put(params, (err) => {
-				// handle potential errors
 				if (err) {
-					console.error(JSON.stringify(err, null, 2));
 					error = createResponse({
 						body: {
 							err,
@@ -200,7 +203,7 @@ export default class Payments {
 					});
 					callback(error);
 				}
-				// create a response
+
 				response = createResponse({
 					body: {
 						payment: params.Item,
@@ -234,18 +237,15 @@ export default class Payments {
 			Key: { ID: id },
 		};
 
-		// delete the payment from the database
 		this.db.delete(params, (err) => {
-			// handle potential errors
 			if (err) {
-				console.error(err);
 				error = createResponse({
 					body: 'Couldn\'t remove the payment.',
 					statusCode: err.statusCode || 501,
 				});
 				callback(error);
 			}
-			// create a response
+
 			response = createResponse({
 				body: {},
 			});
@@ -256,7 +256,6 @@ export default class Payments {
 
 	update(id, body, callback) {
 
-		let message;
 		let error;
 		let response;
 		const params = {
@@ -266,6 +265,7 @@ export default class Payments {
 				'#PenaltyStatus': 'PenaltyStatus',
 				'#PenaltyType': 'PenaltyType',
 				'#PaymentDetail': 'PaymentDetail',
+				'#ID': 'ID',
 			},
 			ExpressionAttributeValues: {
 				':PenaltyStatus': body.PenaltyStatus,
@@ -273,64 +273,40 @@ export default class Payments {
 				':PaymentDetail': body.PaymentDetail,
 			},
 			UpdateExpression: 'SET #PenaltyStatus = :PenaltyStatus, #PenaltyType = :PenaltyType, #PaymentDetail = :PaymentDetail',
+			ConditionExpression: 'attribute_exists(#ID) AND #PenaltyStatus <> :PenaltyStatus',
 			ReturnValues: 'ALL_NEW',
 		};
+		const checkTest = Validation.paymentValidation(body);
 
-		const checkTest = this.validatePayment(body, paymentValidation);
 		if (!checkTest.valid) {
-			callback(null, checkTest.response);
-		} else {
-			this.db.update(params, (err, result) => {
-				if (err) {
-					error = createResponse({
-						message,
-						statusCode: err.statusCode || 501,
-						body: 'Couldn\'t fetch the payment.',
-					});
-					callback(error);
-				}
-				response = createResponse({
-					statusCode: 200,
-					body: result.Attributes,
-				});
-				callback(null, response);
-			});
-		}
-
-	}
-
-	validatePayment(data, paymentValidationModel) {
-		const validationResult = Joi.validate(data, paymentValidationModel.request);
-		if (validationResult.error) {
-			const err = 'Invalid Input';
-			const error = createResponse({
+			const err = checkTest.error.message;
+			const validationError = createResponse({
 				body: {
 					err,
 				},
 				statusCode: 405,
 			});
-			return { valid: false, response: error };
-		} else if (data.PenaltyReference) {
-			if (!this.validatePaymentRef(data.PenaltyReference, data.PenaltyType)) {
-				const err = 'Invalid Payment Reference';
-				const error = createResponse({
-					body: {
-						err,
-					},
-					statusCode: 405,
-				});
-				return { valid: false, response: error };
-			}
+			callback(null, validationError);
+		} else {
+			this.db.update(params, (err, result) => {
+				if (err) {
+					error = createResponse({
+						body: {
+							err: 'Failed to update payment',
+						},
+						statusCode: 500,
+					});
+					callback(null, error);
+				} else {
+					response = createResponse({
+						statusCode: 200,
+						body: result.Attributes,
+					});
+					callback(null, response);
+				}
+			});
 		}
-		return { valid: true, response: {} };
-	}
 
-	validatePaymentRef(penaltyReference, penaltyType) {
-		if (this.constructID(penaltyReference, penaltyType) === '') {
-			return false;
-		}
-		return true;
 	}
-
 }
 
