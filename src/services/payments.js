@@ -172,6 +172,7 @@ export default class Payments {
 				PenaltyStatus: body.PenaltyStatus,
 				PaymentDetail: body.PaymentDetail,
 			},
+			ConditionExpression: 'attribute_not_exists(#ID)',
 		};
 
 		const checkTest = Validation.paymentValidation(body);
@@ -200,7 +201,7 @@ export default class Payments {
 			this.db.put(params, (err) => {
 				// handle potential errors
 				if (err) {
-					console.error(JSON.stringify(err, null, 2));
+					console.log(JSON.stringify(err, null, 2));
 					error = createResponse({
 						body: {
 							err,
@@ -265,7 +266,6 @@ export default class Payments {
 
 	update(id, body, callback) {
 
-		let message;
 		let error;
 		let response;
 		const params = {
@@ -275,6 +275,7 @@ export default class Payments {
 				'#PenaltyStatus': 'PenaltyStatus',
 				'#PenaltyType': 'PenaltyType',
 				'#PaymentDetail': 'PaymentDetail',
+				'#ID': 'ID',
 			},
 			ExpressionAttributeValues: {
 				':PenaltyStatus': body.PenaltyStatus,
@@ -282,6 +283,7 @@ export default class Payments {
 				':PaymentDetail': body.PaymentDetail,
 			},
 			UpdateExpression: 'SET #PenaltyStatus = :PenaltyStatus, #PenaltyType = :PenaltyType, #PaymentDetail = :PaymentDetail',
+			ConditionExpression: 'attribute_exists(#ID) AND #PenaltyStatus <> :PenaltyStatus',
 			ReturnValues: 'ALL_NEW',
 		};
 		const checkTest = Validation.paymentValidation(body);
@@ -299,17 +301,19 @@ export default class Payments {
 			this.db.update(params, (err, result) => {
 				if (err) {
 					error = createResponse({
-						message,
-						statusCode: err.statusCode || 501,
-						body: 'Couldn\'t fetch the payment.',
+						body: {
+							err: 'Failed to update payment',
+						},
+						statusCode: 500,
 					});
-					callback(error);
+					callback(null, error);
+				} else {
+					response = createResponse({
+						statusCode: 200,
+						body: result.Attributes,
+					});
+					callback(null, response);
 				}
-				response = createResponse({
-					statusCode: 200,
-					body: result.Attributes,
-				});
-				callback(null, response);
 			});
 		}
 
