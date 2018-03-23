@@ -2,9 +2,7 @@
 /* eslint-env es6 */
 import AWS from 'aws-sdk';
 import Validation from 'rsp-validation';
-// import Joi from 'joi';
 import createResponse from '../utils/createResponse';
-// import paymentValidation from '../validationModels/paymentValidation';
 
 const lambda = new AWS.Lambda({ region: 'eu-west-1' });
 
@@ -22,7 +20,6 @@ export default class Payments {
 		const keys = [];
 		idList.forEach((element) => {
 			keys.push({ ID: element });
-			// keys.push({ ID: { S: element } });
 		});
 
 		const params = {
@@ -47,7 +44,7 @@ export default class Payments {
 				callback(error);
 			} else {
 				const payments = data.Responses.paymentsTable;
-				// return payments
+
 				response = createResponse({
 					body: {
 						payments,
@@ -80,7 +77,7 @@ export default class Payments {
 				callback(error);
 			} else {
 				const payments = data.Items;
-				// return payments
+
 				response = createResponse({
 					body: {
 						payments,
@@ -163,8 +160,7 @@ export default class Payments {
 		let error;
 		let response;
 
-		const constructedID = `${body.PenaltyReference}_${body.PenaltyType}`; // this.constructID(body.PenaltyReference, body.PenaltyType);
-
+		const constructedID = `${body.PenaltyReference}_${body.PenaltyType}`;
 		const params = {
 			TableName: this.tableName,
 			Item: {
@@ -176,7 +172,7 @@ export default class Payments {
 		};
 
 		const checkTest = Validation.paymentValidation(body);
-		// this.validatePayment(body, paymentValidation);
+
 		if (constructedID === '') {
 			const err = 'Invalid Id';
 			const errorToReturn = createResponse({
@@ -197,11 +193,8 @@ export default class Payments {
 			callback(null, validationError);
 		} else {
 
-			// write the payment to the database
 			this.db.put(params, (err) => {
-				// handle potential errors
 				if (err) {
-					console.log(JSON.stringify(err, null, 2));
 					error = createResponse({
 						body: {
 							err,
@@ -210,7 +203,7 @@ export default class Payments {
 					});
 					callback(error);
 				}
-				// create a response
+
 				response = createResponse({
 					body: {
 						payment: params.Item,
@@ -244,18 +237,15 @@ export default class Payments {
 			Key: { ID: id },
 		};
 
-		// delete the payment from the database
 		this.db.delete(params, (err) => {
-			// handle potential errors
 			if (err) {
-				console.error(err);
 				error = createResponse({
 					body: 'Couldn\'t remove the payment.',
 					statusCode: err.statusCode || 501,
 				});
 				callback(error);
 			}
-			// create a response
+
 			response = createResponse({
 				body: {},
 			});
@@ -287,7 +277,7 @@ export default class Payments {
 			ReturnValues: 'ALL_NEW',
 		};
 		const checkTest = Validation.paymentValidation(body);
-		// this.validatePayment(body, paymentValidation);
+
 		if (!checkTest.valid) {
 			const err = checkTest.error.message;
 			const validationError = createResponse({
