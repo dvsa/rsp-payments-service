@@ -170,7 +170,14 @@ export default class Payments {
 			},
 		};
 
-		const checkTest = Validation.paymentValidation(body);
+		const bodyToValidate = {
+			PenaltyStatus: body.PenaltyStatus,
+			PenaltyType: body.PenaltyType,
+			PenaltyReference: body.PenaltyReference,
+			PaymentDetail: body.PaymentDetail,
+		};
+		// body.PaymentDetail.paymentCode
+		const checkTest = Validation.paymentValidation(bodyToValidate);
 
 		if (constructedID === '') {
 			const err = 'Invalid Id';
@@ -213,7 +220,7 @@ export default class Payments {
 
 				lambda.invoke({
 					FunctionName: this.documentUpdateArn,
-					Payload: `{"body": { "id": "${constructedID}", "paymentStatus": "${body.PenaltyStatus}", "paymentAmount": "${payItem.PaymentDetail.PaymentAmount}","penaltyRefNo": "${body.PenaltyReference}", "penaltyType":"${body.PenaltyType}" } }`,
+					Payload: `{"body": { "id": "${constructedID}", "paymentStatus": "${body.PenaltyStatus}", "paymentAmount": "${payItem.PaymentDetail.PaymentAmount}","penaltyRefNo": "${body.PenaltyReference}", "penaltyType":"${body.PenaltyType}", "paymentToken":"${body.PaymentCode}" } }`,
 				}, (lambdaError, data) => {
 					if (lambdaError) {
 						callback(null, createResponse({ statusCode: 400, error: lambdaError }));
