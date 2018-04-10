@@ -7,11 +7,12 @@ import createResponse from '../utils/createResponse';
 const lambda = new AWS.Lambda({ region: 'eu-west-1' });
 
 export default class Payments {
-	constructor(db, tableName, decryptArn, documentUpdateArn) {
+	constructor(db, tableName, decryptArn, documentUpdateArn, documentDeleteArn) {
 		this.db = db;
 		this.tableName = tableName;
 		this.decryptArn = decryptArn;
 		this.documentUpdateArn = documentUpdateArn;
+		this.documentDeleteArn = documentDeleteArn;
 	}
 
 	batchFetch(idList, callback) {
@@ -241,9 +242,10 @@ export default class Payments {
 		const params = {
 			TableName: this.tableName,
 			Key: { ID: id },
+			ReturnValues: 'ALL_OLD',
 		};
 
-		this.db.delete(params, (err) => {
+		this.db.delete(params, (err, data) => {
 			if (err) {
 				error = createResponse({
 					body: 'Couldn\'t remove the payment.',
@@ -251,11 +253,36 @@ export default class Payments {
 				});
 				callback(error);
 			}
+			console.log('deleted data');
+			console.log(JSON.stringify(data, null, 2));
+			const deletedData = data.Attributes;
+			const paymentInfo = {
+				PenaltyStatus: deletedData.PenaltyStatus,
+				PenaltyType: deletedData.PenaltyType,
+				PenaltyReference: deletedData.PenaltyReference,
+				PaymentDetail: deletedData.PaymentDetail,
+			};
 
 			response = createResponse({
 				body: {},
 			});
-			callback(null, response);
+
+			if (paymentInfo.PenaltyStatus === 'PAID') {
+				console.log(`invoking  ${this.documentDeleteArn} with {"body": { "id": "${id}", "paymentStatus": "UNPAID", "paymentAmount": "${paymentInfo.PaymentDetail.PaymentAmount}","penaltyRefNo": "${paymentInfo.PenaltyReference}", "penaltyType":"${paymentInfo.PenaltyType}", "paymentToken":"${paymentInfo.PaymentCode}" } }`);
+				lambda.invoke({
+					FunctionName: this.documentDeleteArn,
+					Payload: `{"body": { "id": "${id}", "paymentStatus": "UNPAID", "paymentAmount": "${paymentInfo.PaymentDetail.PaymentAmount}","penaltyRefNo": "${paymentInfo.PenaltyReference}", "penaltyType":"${paymentInfo.PenaltyType}", "paymentToken":"${paymentInfo.PaymentCode}" } }`,
+				}, (lambdaError, externalData) => {
+					if (lambdaError) {
+						console.log('lambdaerror');
+						callback(null, createResponse({ statusCode: 400, error: lambdaError }));
+					} else if (externalData.Payload) {
+						callback(null, response);
+					}
+				});
+			} else {
+				callback(null, response);
+			}
 		});
 
 	}
