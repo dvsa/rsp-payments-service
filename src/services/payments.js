@@ -253,8 +253,6 @@ export default class Payments {
 				});
 				callback(error);
 			}
-			console.log('deleted data');
-			console.log(JSON.stringify(data, null, 2));
 			const deletedData = data.Attributes;
 			const paymentInfo = {
 				PenaltyStatus: deletedData.PenaltyStatus,
@@ -268,13 +266,11 @@ export default class Payments {
 			});
 
 			if (paymentInfo.PenaltyStatus === 'PAID') {
-				console.log(`invoking  ${this.documentDeleteArn} with {"body": { "id": "${id}", "paymentStatus": "UNPAID", "paymentAmount": "${paymentInfo.PaymentDetail.PaymentAmount}","penaltyRefNo": "${paymentInfo.PenaltyReference}", "penaltyType":"${paymentInfo.PenaltyType}", "paymentToken":"${paymentInfo.PaymentCode}" } }`);
 				lambda.invoke({
 					FunctionName: this.documentDeleteArn,
 					Payload: `{"body": { "id": "${id}", "paymentStatus": "UNPAID", "paymentAmount": "${paymentInfo.PaymentDetail.PaymentAmount}","penaltyRefNo": "${paymentInfo.PenaltyReference}", "penaltyType":"${paymentInfo.PenaltyType}", "paymentToken":"${paymentInfo.PaymentCode}" } }`,
 				}, (lambdaError, externalData) => {
 					if (lambdaError) {
-						console.log('lambdaerror');
 						callback(null, createResponse({ statusCode: 400, error: lambdaError }));
 					} else if (externalData.Payload) {
 						callback(null, response);
