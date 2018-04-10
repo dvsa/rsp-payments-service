@@ -5,6 +5,8 @@ import create from './functions/create';
 import remove from './functions/delete';
 import update from './functions/update';
 import batchFetch from './functions/batchFetch';
+import checkPaymentPaid from './functions/check-payment-paid';
+import setPenaltyPaid from './functions/set-penalty-paid';
 
 const handler = {
 	auth,
@@ -14,6 +16,7 @@ const handler = {
 	remove,
 	update,
 	batchFetch,
+	checkPaymentPaid,
 };
 
 export default handler;
