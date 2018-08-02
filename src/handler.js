@@ -5,6 +5,8 @@ import create from './functions/create';
 import remove from './functions/delete';
 import update from './functions/update';
 import batchFetch from './functions/batchFetch';
+import createPenaltyGroupPaymentRecord from './functions/createPenaltyGroupPaymentRecord';
+import getPenaltyGroupPaymentRecord from './functions/getPenaltyGroupPaymentRecord';
 
 const handler = {
 	auth,
@@ -14,6 +16,8 @@ const handler = {
 	remove,
 	update,
 	batchFetch,
+	createPenaltyGroupPaymentRecord,
+	getPenaltyGroupPaymentRecord,
 };
 
 export default handler;

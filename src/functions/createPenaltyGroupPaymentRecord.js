@@ -10,6 +10,6 @@ export default (event, context, callback) => {
 
 	const data = JSON.parse(event.body);
 
-	payments.create(data, callback);
+	payments.createPenaltyGroupPaymentRecord(data, callback);
 
 };

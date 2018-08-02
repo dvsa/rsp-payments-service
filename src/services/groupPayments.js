@@ -6,7 +6,7 @@ export default class GroupPayments {
 		this.tableName = tableName;
 	}
 
-	createGroupPaymentRecord(body, callback) {
+	createPenaltyGroupPaymentRecord(body, callback) {
 		let error;
 		let response;
 
@@ -46,12 +46,43 @@ export default class GroupPayments {
 					},
 				});
 
-				// TODO: Penalty group document Lambda invocation
+				// TODO: Penalty group document update Lambda invocation
 
 				callback(null, response);
 			});
 		}
 
+	}
+
+	getPenaltyGroupPaymentRecord(id, callback) {
+		let error;
+		let response;
+
+		const params = {
+			TableName: this.tableName,
+			Key: { ID: id },
+		};
+
+		this.db.get(params, (err, data) => {
+
+			if (err) {
+				error = createResponse({
+					body: {
+						err,
+					},
+					statusCode: 500,
+				});
+				callback(error);
+			} else {
+				const payment = data.Item;
+				response = createResponse({
+					body: {
+						payment,
+					},
+				});
+				callback(null, response);
+			}
+		});
 	}
 
 }
