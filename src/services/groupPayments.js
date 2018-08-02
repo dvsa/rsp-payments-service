@@ -6,7 +6,7 @@ export default class GroupPayments {
 		this.tableName = tableName;
 	}
 
-	create(body, callback) {
+	createGroupPaymentRecord(body, callback) {
 		let error;
 		let response;
 
