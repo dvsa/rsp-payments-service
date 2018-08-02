@@ -10,24 +10,27 @@ describe('createPenaltyGroupPaymentRecord', () => {
 
 	let event;
 	let payment;
+	let createPenaltyGroupPaymentRecordStub;
 
 	afterEach(() => {
 		event = null;
 	});
 
-	describe('when a specific payment is requested', () => {
-
+	beforeEach(() => {
 		event = {
 			httpMethod: 'POST',
 			body: '{"PaymentCode":"12212","PenaltyType":"FPN","PaymentDetail":{"PaymentMethod":"CARD","PaymentRef":"receipt_reference","AuthCode":"auth_code","PaymentAmount":120,"PaymentDate":1533200397}}',
 		};
 		payment = groupPayments.filter(item => item.ID === '15xk9i0xujgg');
-		const createPenaltyGroupPaymentRecordStub = sinon.stub(GroupPayments.prototype, 'createPenaltyGroupPaymentRecord').callsFake((id, callback) => {
+		createPenaltyGroupPaymentRecordStub = sinon.stub(GroupPayments.prototype, 'createPenaltyGroupPaymentRecord').callsFake((id, callback) => {
 			const response = createResponse({
 				body: payment,
 			});
 			callback(null, response);
 		});
+	});
+
+	describe('when a specific payment is requested', () => {
 
 		it('should return a 200 success with the correct payment', (done) => {
 
