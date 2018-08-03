@@ -24,7 +24,7 @@ export default class GroupPayments {
 				body: {
 					err,
 				},
-				statusCode: 405,
+				statusCode: 400,
 			});
 			callback(null, errorToReturn);
 		} else {
