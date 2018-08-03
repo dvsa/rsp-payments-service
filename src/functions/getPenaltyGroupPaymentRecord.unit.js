@@ -6,7 +6,7 @@ import getPenaltyGroupPaymentRecord from './getPenaltyGroupPaymentRecord';
 import createResponse from '../utils/createResponse';
 import groupPayments from '../../mock-data/fake-group-payments.json';
 
-describe('getPenaltyGroupPaymentRecord', () => {
+describe('get', () => {
 
 	let event;
 	let payment;
@@ -15,7 +15,7 @@ describe('getPenaltyGroupPaymentRecord', () => {
 		event = null;
 	});
 
-	describe('when a specific group payment record is requested', () => {
+	describe('when a specific payment is requested', () => {
 
 		beforeEach(() => {
 			event = {

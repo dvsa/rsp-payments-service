@@ -28,7 +28,6 @@ export default class GroupPayments {
 			});
 			callback(null, errorToReturn);
 		} else {
-
 			this.db.put(params, (err) => {
 				if (err) {
 					error = createResponse({
@@ -44,6 +43,7 @@ export default class GroupPayments {
 					body: {
 						payment: params.Item,
 					},
+					statusCode: 201,
 				});
 
 				// TODO: Penalty group document update Lambda invocation
@@ -78,6 +78,7 @@ export default class GroupPayments {
 				response = createResponse({
 					body: {
 						payment,
+						statusCode: 600,
 					},
 				});
 				callback(null, response);
