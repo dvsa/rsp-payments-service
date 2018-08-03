@@ -61,10 +61,10 @@ describe('penaltyGroups', () => {
 					.expect(201)
 					.expect('Content-Type', 'application/json')
 					.end((err, res) => {
-						console.log(res.body);
 						if (err) throw err;
 						expect(res.body.payment.ID).toBe('12212');
-						expect(res.body.payment.PaymentDetail).toEqual(fakePenaltyGroupPaymentRecordPayload.PaymentDetail);
+						expect(res.body.payment.PaymentDetail)
+							.toEqual(fakePenaltyGroupPaymentRecordPayload.PaymentDetail);
 						done();
 					});
 			});
