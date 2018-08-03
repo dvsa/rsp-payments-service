@@ -32,7 +32,7 @@
     "build-artifact": "cd build && rm -rf artifacts && pwd && sls package --package artifacts",
     "build-openApi": "cd build && sls openapi generate -f json && npm run openapireplace",
     "post-build-cleanup": "rm -rf build/mock-data && rm -f build/package.json && rm -f build/openApiReplace.js && rm -f build/package-lock.json",
-    "prepush": "npm run lint && npm test && npm run check-security",
+    "prepush": "npm run lint && npm test && npm run check-security && npm run check-security-log",
     "check-security": "git secrets --scan",
     "check-security-log": "git log -p | scanrepo"
   },

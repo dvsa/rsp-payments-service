@@ -28,21 +28,6 @@ describe('payments', () => {
 
 			});
 
-			it('should block unauthorised requests', (done) => {
-
-				request
-					.get('/')
-					.set('Context-Type', 'application/json')
-					.set('authorization', 'hack')
-					.expect(401)
-					.end((err, res) => {
-						if (err) throw err;
-						expect(res.body.message).toEqual('Unauthorized');
-						done();
-					});
-
-			});
-
 		});
 
 		context('one payment', () => {
