@@ -78,7 +78,6 @@ export default class GroupPayments {
 				response = createResponse({
 					body: {
 						payment,
-						statusCode: 600,
 					},
 				});
 				callback(null, response);
