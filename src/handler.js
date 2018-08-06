@@ -1,4 +1,3 @@
-import auth from './functions/auth';
 import list from './functions/list';
 import get from './functions/get';
 import create from './functions/create';
@@ -9,7 +8,6 @@ import createPenaltyGroupPaymentRecord from './functions/createPenaltyGroupPayme
 import getPenaltyGroupPaymentRecord from './functions/getPenaltyGroupPaymentRecord';
 
 const handler = {
-	auth,
 	list,
 	get,
 	create,
