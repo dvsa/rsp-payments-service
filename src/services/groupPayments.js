@@ -1,10 +1,12 @@
 import createResponse from '../utils/createResponse';
+import { Lambda } from 'aws-sdk';
 
+const lambda = new Lambda({ region: 'eu-west-1' });
 export default class GroupPayments {
-	constructor(db, tableName, updatePenaltyGroupPaymentRecord) {
+	constructor(db, tableName, updatePenaltyGroupPaymentRecordArn) {
 		this.db = db;
 		this.tableName = tableName;
-		this.updatePenaltyGroupPaymentRecord = updatePenaltyGroupPaymentRecord;
+		this.updatePenaltyGroupPaymentRecordArn = updatePenaltyGroupPaymentRecordArn;
 	}
 
 	createPenaltyGroupPaymentRecord(body, callback) {
@@ -47,8 +49,16 @@ export default class GroupPayments {
 					statusCode: 201,
 				});
 
-				// TODO: Penalty group document update Lambda invocation
-
+				lambda.invoke({
+					FunctionName: this.updatePenaltyGroupPaymentRecordArn,
+					Payload: `{"body": { "id": "${body.PaymentCode}", "paymentStatus": "${body.PenaltyStatus}" } }`,
+				})
+					.promise()
+					.then(lambdaResponse => callback(null, lambdaResponse))
+					.catch(lambdaError => callback(null, createResponse({
+						statusCode: 400,
+						error: lambdaError,
+					})));
 				callback(null, response);
 			});
 		}
