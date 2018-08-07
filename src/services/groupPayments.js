@@ -74,7 +74,6 @@ export default class GroupPayments {
 						});
 				} else {
 					// Update existing item if it exists
-					
 				}
 			})
 			.catch((err) => {
