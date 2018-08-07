@@ -1,5 +1,5 @@
-import createResponse from '../utils/createResponse';
 import { Lambda } from 'aws-sdk';
+import createResponse from '../utils/createResponse';
 
 const lambda = new Lambda({ region: 'eu-west-1' });
 export default class GroupPayments {
