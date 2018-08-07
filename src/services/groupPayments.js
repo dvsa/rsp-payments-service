@@ -1,9 +1,10 @@
 import createResponse from '../utils/createResponse';
 
 export default class GroupPayments {
-	constructor(db, tableName) {
+	constructor(db, tableName, updatePenaltyGroupPaymentRecord) {
 		this.db = db;
 		this.tableName = tableName;
+		this.updatePenaltyGroupPaymentRecord = updatePenaltyGroupPaymentRecord;
 	}
 
 	createPenaltyGroupPaymentRecord(body, callback) {
