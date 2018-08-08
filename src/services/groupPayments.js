@@ -62,10 +62,10 @@ export default class GroupPayments {
 								body: putParams.Item,
 								statusCode: 201,
 							});
-							console.log(`Invoke updatePenaltyGroupPaymentRecord, args: ${body.PaymentCode}, ${body.PaymentStatus}, ${body.PenaltyType}`);
+							console.log(`Invoke updatePenaltyGroupPaymentRecord, args: ${body.PaymentCode}, ${paymentDetail.PaymentStatus}, ${body.PenaltyType}`);
 							GroupPayments.updatePenaltyGroupPaymentRecord(
 								body.PaymentCode,
-								body.PaymentStatus,
+								paymentDetail.PaymentStatus,
 								body.PenaltyType,
 								callback,
 							);
@@ -104,7 +104,7 @@ export default class GroupPayments {
 							console.log(`Invoke updatePenaltyGroupPaymentRecord, args: ${body.PaymentCode}, ${body.PaymentStatus}, ${body.PenaltyType}`);
 							GroupPayments.updatePenaltyGroupPaymentRecord(
 								body.PaymentCode,
-								body.PaymentStatus,
+								paymentDetail.PaymentStatus,
 								body.PenaltyType,
 								callback,
 							);
