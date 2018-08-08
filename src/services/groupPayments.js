@@ -17,9 +17,7 @@ export default class GroupPayments {
 		if (body.PaymentCode === '') {
 			const err = 'Invalid Id';
 			const errorToReturn = createResponse({
-				body: {
-					err,
-				},
+				body: { err },
 				statusCode: 400,
 			});
 			callback(null, errorToReturn);
@@ -70,12 +68,12 @@ export default class GroupPayments {
 						});
 				} else {
 					// Update existing item
-					const item = data.Item[body.PenaltyType];
+					const paymentItem = data.Item.Payments[body.PenaltyType];
 					// Return 400 bad request if payment already exists
-					if (typeof item !== 'undefined' && !isEmptyObject(item)) {
+					if (typeof paymentItem !== 'undefined' && !isEmptyObject(paymentItem)) {
 						callback(null, createResponse({
 							statusCode: 400,
-							body: new Error(`Payment for ${body.PenaltyType} already exists`),
+							body: `Payment for ${body.PenaltyType} already exists in ${body.PaymentCode} payment group`,
 						}));
 						return;
 					}
