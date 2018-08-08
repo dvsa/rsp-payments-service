@@ -6,7 +6,7 @@ import AWS from 'aws-sdk';
 
 const url = 'http://localhost:3000/groupPayments';
 const request = supertest(url);
-const groupId = '15xef9lt3bbb';
+const groupId = '15xk9i0xujgg';
 
 describe('penaltyGroups', () => {
 
@@ -28,11 +28,31 @@ describe('penaltyGroups', () => {
 					.expect('Content-Type', 'application/json')
 					.end((err, res) => {
 						if (err) throw err;
-						expect(res.body.payment.ID).toEqual(groupId);
-						expect(res.body.payment.PaymentDetail.PaymentRef).toBe('RHF12345');
-						expect(res.body.payment.PaymentDetail.AuthCode).toBe('1234BBB');
-						expect(res.body.payment.PaymentDetail.PaymentAmount).toBe(400);
-						expect(res.body.payment.PaymentDetail.PaymentDate).toBe(1519300376667);
+						expect(res.body.ID).toEqual(groupId);
+						expect(res.body.Payments.FPN.PaymentRef).toBe('REF12345');
+						expect(res.body.Payments.FPN.AuthCode).toBe('1234TBD');
+						expect(res.body.Payments.FPN.PaymentAmount).toBe(800);
+						expect(res.body.Payments.FPN.PaymentDate).toBe(1519300376667);
+						expect(res.body.Payments.FPN.PaymentStatus).toBe('UNPAID');
+						expect(res.body.Payments.IM.PaymentRef).toBe('RJF12345');
+						expect(res.body.Payments.IM.AuthCode).toBe('1234TBG');
+						expect(res.body.Payments.IM.PaymentAmount).toBe(80);
+						expect(res.body.Payments.IM.PaymentDate).toBe(1519300376667);
+						expect(res.body.Payments.IM.PaymentStatus).toBe('PAID');
+						done();
+					});
+			});
+		});
+		context('an individual penalty group payment record that doesn\'t exist', () => {
+			it('should return the payment details of the group', (done) => {
+				request
+					.get('/doesnotexist')
+					.set('Content-Type', 'application/json')
+					.set('Authorization', 'allow')
+					.expect(404)
+					.expect('Content-Type', 'application/json')
+					.end((err) => {
+						if (err) throw err;
 						done();
 					});
 			});
@@ -62,9 +82,99 @@ describe('penaltyGroups', () => {
 					.expect('Content-Type', 'application/json')
 					.end((err, res) => {
 						if (err) throw err;
-						expect(res.body.payment.ID).toBe('12212');
-						expect(res.body.payment.PaymentDetail)
-							.toEqual(fakePenaltyGroupPaymentRecordPayload.PaymentDetail);
+						expect(res.body.ID).toBe('12212');
+						expect(res.body.Payments.FPN)
+							.toEqual({
+								...fakePenaltyGroupPaymentRecordPayload.PaymentDetail,
+								PaymentStatus: 'PAID',
+							});
+						done();
+					});
+			});
+		});
+
+		context('a new IM payment for an existing penalty group payment record', () => {
+			it('should return created penalty group payment record with generated ID', (done) => {
+				const fakePenaltyGroupPaymentRecordPayload = {
+					PaymentCode: '12212',
+					PenaltyType: 'IM',
+					PaymentDetail: {
+						PaymentMethod: 'CARD',
+						PaymentRef: 'receipt_reference',
+						AuthCode: 'auth_code',
+						PaymentAmount: 80,
+						PaymentDate: 1533200397,
+					},
+				};
+				request
+					.post('/')
+					.set('Content-Type', 'application/json')
+					.set('Authorization', 'allow')
+					.send(fakePenaltyGroupPaymentRecordPayload)
+					.expect(200)
+					.expect('Content-Type', 'application/json')
+					.end((err, res) => {
+						if (err) throw err;
+						expect(res.body)
+							.toEqual({
+								...fakePenaltyGroupPaymentRecordPayload.PaymentDetail,
+								PaymentStatus: 'PAID',
+							});
+						done();
+					});
+			});
+		});
+
+		context('an IM payment for an existing penalty group payment record with an existing IM payment', () => {
+			it('should return created penalty group payment record with generated ID', (done) => {
+				const fakePenaltyGroupPaymentRecordPayload = {
+					PaymentCode: '12212',
+					PenaltyType: 'IM',
+					PaymentDetail: {
+						PaymentMethod: 'CARD',
+						PaymentRef: 'receipt_reference',
+						AuthCode: 'auth_code',
+						PaymentAmount: 80,
+						PaymentDate: 1533200397,
+					},
+				};
+				request
+					.post('/')
+					.set('Content-Type', 'application/json')
+					.set('Authorization', 'allow')
+					.send(fakePenaltyGroupPaymentRecordPayload)
+					.expect(400)
+					.end((err, res) => {
+						if (err) throw err;
+						expect(res.body.err).toBe('Payment for IM already exists in 12212 payment group');
+						done();
+					});
+			});
+		});
+
+		context('a new penalty group payment record with an invalid penalty type', () => {
+			it('should return created penalty group payment record with generated ID', (done) => {
+				const fakePenaltyGroupPaymentRecordPayload = {
+					PaymentCode: '123432jkew',
+					PenaltyType: 'INVALID',
+					PaymentDetail: {
+						PaymentMethod: 'CARD',
+						PaymentRef: 'receipt_reference',
+						AuthCode: 'auth_code',
+						PaymentAmount: 120,
+						PaymentDate: 1533200397,
+					},
+				};
+				request
+					.post('/')
+					.set('Content-Type', 'application/json')
+					.set('Authorization', 'allow')
+					.send(fakePenaltyGroupPaymentRecordPayload)
+					.expect(400)
+					.expect('Content-Type', 'application/json')
+					.end((err, res) => {
+						if (err) throw err;
+						expect(res.body.err).toBe('Invalid penalty type INVALID, must be either FPN, IM or CDN');
 						done();
 					});
 			});
