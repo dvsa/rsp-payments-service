@@ -22,6 +22,15 @@ export default class GroupPayments {
 			});
 			callback(null, errorToReturn);
 		}
+		const isPenaltyTypeValid = ['FPN', 'IM', 'CDN'].includes(body.PenaltyType);
+		if (!isPenaltyTypeValid) {
+			const err = `Invalid penalty type ${body.PenaltyType}, must be either FPN, IM or CDN`;
+			const errorToReturn = createResponse({
+				body: { err },
+				statusCode: 400,
+			});
+			callback(null, errorToReturn);
+		}
 
 		const paymentDetail = {
 			...body.PaymentDetail,
@@ -55,6 +64,7 @@ export default class GroupPayments {
 							GroupPayments.updatePenaltyGroupPaymentRecord(
 								body.PaymentCode,
 								body.PaymentStatus,
+								body.PenaltyType,
 								callback,
 							);
 							callback(null, response);
@@ -71,9 +81,10 @@ export default class GroupPayments {
 					const paymentItem = data.Item.Payments[body.PenaltyType];
 					// Return 400 bad request if payment already exists
 					if (typeof paymentItem !== 'undefined' && !isEmptyObject(paymentItem)) {
+						const err = `Payment for ${body.PenaltyType} already exists in ${body.PaymentCode} payment group`;
 						callback(null, createResponse({
 							statusCode: 400,
-							body: `Payment for ${body.PenaltyType} already exists in ${body.PaymentCode} payment group`,
+							body: { err },
 						}));
 						return;
 					}
@@ -87,7 +98,15 @@ export default class GroupPayments {
 						},
 					};
 					this.db.put(putUpdateParams).promise()
-						.then(() => callback(null, createResponse({ statusCode: 200, body: paymentDetail })))
+						.then(() => {
+							GroupPayments.updatePenaltyGroupPaymentRecord(
+								body.PaymentCode,
+								body.PaymentStatus,
+								body.PenaltyType,
+								callback,
+							);
+							callback(null, createResponse({ statusCode: 200, body: paymentDetail }));
+						})
 						.catch((err) => {
 							error = createResponse({
 								body: { err },
@@ -133,10 +152,10 @@ export default class GroupPayments {
 		});
 	}
 
-	static updatePenaltyGroupPaymentRecord(id, paymentSatus, callback) {
+	static updatePenaltyGroupPaymentRecord(id, paymentSatus, penaltyType, callback) {
 		lambda.invoke({
 			FunctionName: this.updatePenaltyGroupPaymentRecordArn,
-			Payload: `{"body": { "id": "${id}", "paymentStatus": "${paymentSatus}" } }`,
+			Payload: `{"body": { "id": "${id}", "paymentStatus": "${paymentSatus}", "penaltyType": "${penaltyType}" } }`,
 		})
 			.promise()
 			.then(lambdaResponse => callback(null, lambdaResponse))

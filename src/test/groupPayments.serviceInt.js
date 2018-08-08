@@ -146,7 +146,35 @@ describe('penaltyGroups', () => {
 					.expect(400)
 					.end((err, res) => {
 						if (err) throw err;
-						expect(res.body).toBe('Payment for IM already exists in 12212 payment group');
+						expect(res.body.err).toBe('Payment for IM already exists in 12212 payment group');
+						done();
+					});
+			});
+		});
+
+		context('a new penalty group payment record with an invalid penalty type', () => {
+			it('should return created penalty group payment record with generated ID', (done) => {
+				const fakePenaltyGroupPaymentRecordPayload = {
+					PaymentCode: '123432jkew',
+					PenaltyType: 'INVALID',
+					PaymentDetail: {
+						PaymentMethod: 'CARD',
+						PaymentRef: 'receipt_reference',
+						AuthCode: 'auth_code',
+						PaymentAmount: 120,
+						PaymentDate: 1533200397,
+					},
+				};
+				request
+					.post('/')
+					.set('Content-Type', 'application/json')
+					.set('Authorization', 'allow')
+					.send(fakePenaltyGroupPaymentRecordPayload)
+					.expect(400)
+					.expect('Content-Type', 'application/json')
+					.end((err, res) => {
+						if (err) throw err;
+						expect(res.body.err).toBe('Invalid penalty type INVALID, must be either FPN, IM or CDN');
 						done();
 					});
 			});
