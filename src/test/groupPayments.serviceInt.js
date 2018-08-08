@@ -57,7 +57,6 @@ describe('penaltyGroups', () => {
 						AuthCode: 'auth_code',
 						PaymentAmount: 120,
 						PaymentDate: 1533200397,
-						PaymentStatus: 'PAID',
 					},
 				};
 				request
@@ -71,7 +70,70 @@ describe('penaltyGroups', () => {
 						if (err) throw err;
 						expect(res.body.ID).toBe('12212');
 						expect(res.body.Payments.FPN)
-							.toEqual(fakePenaltyGroupPaymentRecordPayload.PaymentDetail);
+							.toEqual({
+								...fakePenaltyGroupPaymentRecordPayload.PaymentDetail,
+								PaymentStatus: 'PAID',
+							});
+						done();
+					});
+			});
+		});
+
+		context('a new IM payment for an existing penalty group payment record', () => {
+			it('should return created penalty group payment record with generated ID', (done) => {
+				const fakePenaltyGroupPaymentRecordPayload = {
+					PaymentCode: '12212',
+					PenaltyType: 'IM',
+					PaymentDetail: {
+						PaymentMethod: 'CARD',
+						PaymentRef: 'receipt_reference',
+						AuthCode: 'auth_code',
+						PaymentAmount: 80,
+						PaymentDate: 1533200397,
+					},
+				};
+				request
+					.post('/')
+					.set('Content-Type', 'application/json')
+					.set('Authorization', 'allow')
+					.send(fakePenaltyGroupPaymentRecordPayload)
+					.expect(200)
+					.expect('Content-Type', 'application/json')
+					.end((err, res) => {
+						if (err) throw err;
+						expect(res.body.ID).toBe('12212');
+						expect(res.body.Payments.FPN)
+							.toEqual({
+								...fakePenaltyGroupPaymentRecordPayload.PaymentDetail,
+								PaymentStatus: 'PAID',
+							});
+						done();
+					});
+			});
+		});
+
+		context('an IM payment for an existing penalty group payment record with an existing IM payment', () => {
+			it('should return created penalty group payment record with generated ID', (done) => {
+				const fakePenaltyGroupPaymentRecordPayload = {
+					PaymentCode: '12212',
+					PenaltyType: 'IM',
+					PaymentDetail: {
+						PaymentMethod: 'CARD',
+						PaymentRef: 'receipt_reference',
+						AuthCode: 'auth_code',
+						PaymentAmount: 80,
+						PaymentDate: 1533200397,
+					},
+				};
+				request
+					.post('/')
+					.set('Content-Type', 'application/json')
+					.set('Authorization', 'allow')
+					.send(fakePenaltyGroupPaymentRecordPayload)
+					.expect(400)
+					.end((err, res) => {
+						if (err) throw err;
+						expect(res.body).toBe('Payment for IM already exists in 12212 payment group');
 						done();
 					});
 			});
