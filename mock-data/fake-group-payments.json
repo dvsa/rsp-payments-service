@@ -4,7 +4,7 @@
       "FPN": {
         "PaymentRef": "REF12345",
         "AuthCode": "1234TBD",
-        "PaymentAmount": "800",
+        "PaymentAmount": 800,
         "PaymentDate": 1519300376667,
         "PaymentStatus": "UNPAID"
       },
@@ -23,7 +23,7 @@
       "FPN": {
         "PaymentRef": "RGF12345",
         "AuthCode": "1234AAA",
-        "PaymentAmount": "80",
+        "PaymentAmount": 80,
         "PaymentDate": 1519300376667,
         "PaymentStatus": "UNPAID"
       }

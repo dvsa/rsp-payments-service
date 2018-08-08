@@ -31,12 +31,12 @@ describe('penaltyGroups', () => {
 						expect(res.body.ID).toEqual(groupId);
 						expect(res.body.Payments.FPN.PaymentRef).toBe('REF12345');
 						expect(res.body.Payments.FPN.AuthCode).toBe('1234TBD');
-						expect(res.body.Payments.FPN.PaymentAmount).toBe('800');
+						expect(res.body.Payments.FPN.PaymentAmount).toBe(800);
 						expect(res.body.Payments.FPN.PaymentDate).toBe(1519300376667);
 						expect(res.body.Payments.FPN.PaymentStatus).toBe('UNPAID');
 						expect(res.body.Payments.IM.PaymentRef).toBe('RJF12345');
 						expect(res.body.Payments.IM.AuthCode).toBe('1234TBG');
-						expect(res.body.Payments.IM.PaymentAmount).toBe('80');
+						expect(res.body.Payments.IM.PaymentAmount).toBe(80);
 						expect(res.body.Payments.IM.PaymentDate).toBe(1519300376667);
 						expect(res.body.Payments.IM.PaymentStatus).toBe('PAID');
 						done();
