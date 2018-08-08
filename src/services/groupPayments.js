@@ -55,12 +55,14 @@ export default class GroupPayments {
 			.then((data) => {
 				if (isEmptyObject(data)) {
 					// Create a new record if item doesn't exist
+					console.log('Create a new record if item doesn\'t exist');
 					this.db.put(putParams).promise()
 						.then(() => {
 							response = createResponse({
 								body: putParams.Item,
 								statusCode: 201,
 							});
+							console.log(`Invoke updatePenaltyGroupPaymentRecord, args: ${body.PaymentCode}, ${body.PaymentStatus}, ${body.PenaltyType}`);
 							GroupPayments.updatePenaltyGroupPaymentRecord(
 								body.PaymentCode,
 								body.PaymentStatus,
@@ -99,6 +101,7 @@ export default class GroupPayments {
 					};
 					this.db.put(putUpdateParams).promise()
 						.then(() => {
+							console.log(`Invoke updatePenaltyGroupPaymentRecord, args: ${body.PaymentCode}, ${body.PaymentStatus}, ${body.PenaltyType}`);
 							GroupPayments.updatePenaltyGroupPaymentRecord(
 								body.PaymentCode,
 								body.PaymentStatus,
@@ -158,7 +161,10 @@ export default class GroupPayments {
 			Payload: `{"body": { "id": "${id}", "paymentStatus": "${paymentSatus}", "penaltyType": "${penaltyType}" } }`,
 		})
 			.promise()
-			.then(lambdaResponse => callback(null, lambdaResponse))
+			.then((lambdaResponse) => {
+				console.log('Invocation complete updatePenaltyGroupPaymentRecord');
+				callback(null, lambdaResponse);
+			})
 			.catch(lambdaError => callback(null, createResponse({
 				statusCode: 400,
 				error: lambdaError,
