@@ -118,7 +118,6 @@ export default class GroupPayments {
 		};
 
 		this.db.get(params, (err, data) => {
-
 			if (err) {
 				error = createResponse({
 					body: { err },
@@ -126,6 +125,7 @@ export default class GroupPayments {
 				});
 				callback(error);
 			} else {
+				if (isEmptyObject(data)) callback(null, createResponse({ statusCode: 404 }));
 				const payment = data.Item;
 				response = createResponse({ body: payment });
 				callback(null, response);
