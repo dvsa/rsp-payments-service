@@ -4,7 +4,7 @@
       "FPN": {
         "PaymentRef": "REF12345",
         "AuthCode": "1234TBD",
-        "PaymentAmount": "80",
+        "PaymentAmount": "800",
         "PaymentDate": 1519300376667,
         "PaymentStatus": "UNPAID"
       },

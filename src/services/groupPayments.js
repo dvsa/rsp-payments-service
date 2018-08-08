@@ -49,7 +49,7 @@ export default class GroupPayments {
 					this.db.put(putParams).promise()
 						.then(() => {
 							response = createResponse({
-								body: { payment: putParams.Item },
+								body: putParams.Item,
 								statusCode: 201,
 							});
 							GroupPayments.updatePenaltyGroupPaymentRecord(
@@ -121,19 +121,13 @@ export default class GroupPayments {
 
 			if (err) {
 				error = createResponse({
-					body: {
-						err,
-					},
+					body: { err },
 					statusCode: 500,
 				});
 				callback(error);
 			} else {
 				const payment = data.Item;
-				response = createResponse({
-					body: {
-						payment,
-					},
-				});
+				response = createResponse({ body: payment });
 				callback(null, response);
 			}
 		});

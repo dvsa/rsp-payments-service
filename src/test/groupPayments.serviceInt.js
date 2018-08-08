@@ -6,7 +6,7 @@ import AWS from 'aws-sdk';
 
 const url = 'http://localhost:3000/groupPayments';
 const request = supertest(url);
-const groupId = '15xef9lt3bbb';
+const groupId = '15xk9i0xujgg';
 
 describe('penaltyGroups', () => {
 
@@ -28,11 +28,17 @@ describe('penaltyGroups', () => {
 					.expect('Content-Type', 'application/json')
 					.end((err, res) => {
 						if (err) throw err;
-						expect(res.body.payment.ID).toEqual(groupId);
-						expect(res.body.payment.PaymentDetail.PaymentRef).toBe('RHF12345');
-						expect(res.body.payment.PaymentDetail.AuthCode).toBe('1234BBB');
-						expect(res.body.payment.PaymentDetail.PaymentAmount).toBe(400);
-						expect(res.body.payment.PaymentDetail.PaymentDate).toBe(1519300376667);
+						expect(res.body.ID).toEqual(groupId);
+						expect(res.body.Payments.FPN.PaymentRef).toBe('REF12345');
+						expect(res.body.Payments.FPN.AuthCode).toBe('1234TBD');
+						expect(res.body.Payments.FPN.PaymentAmount).toBe('800');
+						expect(res.body.Payments.FPN.PaymentDate).toBe(1519300376667);
+						expect(res.body.Payments.FPN.PaymentStatus).toBe('UNPAID');
+						expect(res.body.Payments.IM.PaymentRef).toBe('RJF12345');
+						expect(res.body.Payments.IM.AuthCode).toBe('1234TBG');
+						expect(res.body.Payments.IM.PaymentAmount).toBe('80');
+						expect(res.body.Payments.IM.PaymentDate).toBe(1519300376667);
+						expect(res.body.Payments.IM.PaymentStatus).toBe('PAID');
 						done();
 					});
 			});
@@ -51,6 +57,7 @@ describe('penaltyGroups', () => {
 						AuthCode: 'auth_code',
 						PaymentAmount: 120,
 						PaymentDate: 1533200397,
+						PaymentStatus: 'PAID',
 					},
 				};
 				request
@@ -62,8 +69,8 @@ describe('penaltyGroups', () => {
 					.expect('Content-Type', 'application/json')
 					.end((err, res) => {
 						if (err) throw err;
-						expect(res.body.payment.ID).toBe('12212');
-						expect(res.body.payment.PaymentDetail)
+						expect(res.body.ID).toBe('12212');
+						expect(res.body.Payments.FPN)
 							.toEqual(fakePenaltyGroupPaymentRecordPayload.PaymentDetail);
 						done();
 					});
