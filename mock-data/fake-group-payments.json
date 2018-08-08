@@ -1,37 +1,32 @@
 [{
     "ID": "15xk9i0xujgg",
-    "PaymentDetail": {
-      "PaymentRef": "REF12345",
-      "AuthCode": "1234TBD",
-      "PaymentAmount": 80,
-      "PaymentDate": 1519300376667
+    "Payments": {
+      "FPN": {
+        "PaymentRef": "REF12345",
+        "AuthCode": "1234TBD",
+        "PaymentAmount": "80",
+        "PaymentDate": 1519300376667,
+        "PaymentStatus": "UNPAID"
+      },
+      "IM": {
+        "PaymentRef": "RJF12345",
+        "AuthCode": "1234TBG",
+        "PaymentAmount": "80",
+        "PaymentDate": 1519300376667,
+        "PaymentStatus": "PAID"
+      }
     }
   },
   {
     "ID": "15xef9lt3bhc",
-    "PaymentDetail": {
-      "PaymentRef": "RJF12345",
-      "AuthCode": "1234CCC",
-      "PaymentAmount": 200,
-      "PaymentDate": 1519300376667
-    }
-  },
-  {
-    "ID": "15xef9lt3bhs",
-    "PaymentDetail": {
-      "PaymentRef": "RGF12345",
-      "AuthCode": "1234AAA",
-      "PaymentAmount": 800,
-      "PaymentDate": 1519300376667
-    }
-  },
-  {
-    "ID": "15xef9lt3bbb",
-    "PaymentDetail": {
-      "PaymentRef": "RHF12345",
-      "AuthCode": "1234BBB",
-      "PaymentAmount": 400,
-      "PaymentDate": 1519300376667
+    "Payments": {
+      "FPN": {
+        "PaymentRef": "RGF12345",
+        "AuthCode": "1234AAA",
+        "PaymentAmount": "80",
+        "PaymentDate": 1519300376667,
+        "PaymentStatus": "UNPAID"
+      }
     }
   }
 ]
