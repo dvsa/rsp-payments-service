@@ -101,8 +101,7 @@ describe('penaltyGroups', () => {
 					.expect('Content-Type', 'application/json')
 					.end((err, res) => {
 						if (err) throw err;
-						expect(res.body.ID).toBe('12212');
-						expect(res.body.Payments.FPN)
+						expect(res.body)
 							.toEqual({
 								...fakePenaltyGroupPaymentRecordPayload.PaymentDetail,
 								PaymentStatus: 'PAID',
