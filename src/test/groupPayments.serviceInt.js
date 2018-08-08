@@ -43,6 +43,20 @@ describe('penaltyGroups', () => {
 					});
 			});
 		});
+		context('an individual penalty group payment record that doesn\'t exist', () => {
+			it('should return the payment details of the group', (done) => {
+				request
+					.get('/doesnotexist')
+					.set('Content-Type', 'application/json')
+					.set('Authorization', 'allow')
+					.expect(404)
+					.expect('Content-Type', 'application/json')
+					.end((err) => {
+						if (err) throw err;
+						done();
+					});
+			});
+		});
 	});
 
 	context('POST', () => {
