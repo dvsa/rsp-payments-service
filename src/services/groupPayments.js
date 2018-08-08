@@ -51,9 +51,7 @@ export default class GroupPayments {
 					this.db.put(putParams).promise()
 						.then(() => {
 							response = createResponse({
-								body: {
-									payment: putParams.Item,
-								},
+								body: { payment: putParams.Item },
 								statusCode: 201,
 							});
 							GroupPayments.updatePenaltyGroupPaymentRecord(
@@ -65,17 +63,43 @@ export default class GroupPayments {
 						})
 						.catch((_err) => {
 							error = createResponse({
-								body: {
-									_err,
-								},
+								body: { _err },
 								statusCode: 500,
 							});
 							callback(null, error);
 						});
 				} else {
-					// Update existing item if it exists
+					// Update existing item
+					const item = data.Item[body.PenaltyType];
+					// Return 400 bad request if payment already exists
+					if (typeof item !== 'undefined' && !isEmptyObject(item)) {
+						callback(null, createResponse({
+							statusCode: 400,
+							body: new Error(`Payment for ${body.PenaltyType} already exists`),
+						}));
+						return;
+					}
+					data.Item.Payments[body.PenaltyType] = paymentDetail;
+					const putUpdateParams = {
+						TableName: this.tableName,
+						Item: data.Item,
+						ConditionExpression: 'attribute_exists(#ID)',
+						ExpressionAttributeNames: {
+							'#ID': 'ID',
+						},
+					};
+					this.db.put(putUpdateParams).promise()
+						.then(() => callback(null, createResponse({ statusCode: 200, body: paymentDetail })))
+						.catch((err) => {
+							error = createResponse({
+								body: { err },
+								statusCode: 500,
+							});
+							callback(null, error);
+						});
 				}
 			})
+			// Catch for initial db.get
 			.catch((err) => {
 				error = createResponse({
 					body: { err },
