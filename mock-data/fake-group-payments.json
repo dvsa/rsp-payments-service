@@ -11,7 +11,7 @@
       "IM": {
         "PaymentRef": "RJF12345",
         "AuthCode": "1234TBG",
-        "PaymentAmount": "80",
+        "PaymentAmount": 80,
         "PaymentDate": 1519300376667,
         "PaymentStatus": "PAID"
       }
