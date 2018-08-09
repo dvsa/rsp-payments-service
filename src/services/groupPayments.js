@@ -63,7 +63,7 @@ export default class GroupPayments {
 								statusCode: 201,
 							});
 							console.log(`Invoke updatePenaltyGroupPaymentRecord, args: ${body.PaymentCode}, ${paymentDetail.PaymentStatus}, ${body.PenaltyType}`);
-							GroupPayments.updatePenaltyGroupPaymentRecord(
+							this._updatePenaltyGroupPaymentRecord(
 								body.PaymentCode,
 								paymentDetail.PaymentStatus,
 								body.PenaltyType,
@@ -73,10 +73,14 @@ export default class GroupPayments {
 									console.log('Invocation complete updatePenaltyGroupPaymentRecord');
 									callback(null, response);
 								})
-								.catch(lambdaError => callback(null, createResponse({
-									statusCode: 400,
-									error: lambdaError,
-								})));
+								.catch((lambdaError) => {
+									console.log('Invocation error updatePenaltyGroupPaymentRecord');
+									console.log(lambdaError);
+									callback(null, createResponse({
+										statusCode: 400,
+										body: lambdaError,
+									}));
+								});
 						})
 						.catch((_err) => {
 							error = createResponse({
@@ -109,7 +113,7 @@ export default class GroupPayments {
 					this.db.put(putUpdateParams).promise()
 						.then(() => {
 							console.log(`Invoke updatePenaltyGroupPaymentRecord, args: ${body.PaymentCode}, ${body.PaymentStatus}, ${body.PenaltyType}`);
-							GroupPayments.updatePenaltyGroupPaymentRecord(
+							this._updatePenaltyGroupPaymentRecord(
 								body.PaymentCode,
 								paymentDetail.PaymentStatus,
 								body.PenaltyType,
@@ -119,10 +123,14 @@ export default class GroupPayments {
 									console.log('Invocation complete updatePenaltyGroupPaymentRecord');
 									callback(null, createResponse({ statusCode: 200, body: paymentDetail }));
 								})
-								.catch(lambdaError => callback(null, createResponse({
-									statusCode: 400,
-									error: lambdaError,
-								})));
+								.catch((lambdaError) => {
+									console.log('Invocation error updatePenaltyGroupPaymentRecord');
+									console.log(lambdaError);
+									callback(null, createResponse({
+										statusCode: 400,
+										body: lambdaError,
+									}));
+								});
 						})
 						.catch((err) => {
 							error = createResponse({
@@ -169,7 +177,7 @@ export default class GroupPayments {
 		});
 	}
 
-	static updatePenaltyGroupPaymentRecord(id, paymentSatus, penaltyType) {
+	_updatePenaltyGroupPaymentRecord(id, paymentSatus, penaltyType) {
 		return lambda.invoke({
 			FunctionName: this.updatePenaltyGroupPaymentRecordArn,
 			Payload: `{"body": { "id": "${id}", "paymentStatus": "${paymentSatus}", "penaltyType": "${penaltyType}" } }`,
