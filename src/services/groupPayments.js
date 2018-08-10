@@ -71,7 +71,31 @@ export default class GroupPayments {
 							)
 								.then(() => {
 									console.log('Invocation complete updatePenaltyGroupPaymentRecord');
-									callback(null, response);
+									const singlePaymentPutRequests = body.PenaltyIds.map(id => ({
+										PutRequest: {
+											Item: {
+												ID: id,
+												PaymentStatus: 'PAID',
+												PaymentDetail: body.PaymentDetail,
+											},
+										},
+									}));
+									const singlePaymentsParams = {
+										RequestItems: {
+											[process.env.DYNAMODB_PAYMENTS_TABLE]: singlePaymentPutRequests,
+										},
+									};
+									this.db.batchWrite(singlePaymentsParams).promise()
+										.then(() => {
+											callback(null, response);
+										})
+										.catch((err) => {
+											console.log(`Error creating individual payment for group: ${err}`);
+											callback(null, createResponse({
+												statusCode: 400,
+												body: err,
+											}));
+										});
 								})
 								.catch((lambdaError) => {
 									console.log('Invocation error updatePenaltyGroupPaymentRecord');
@@ -121,7 +145,31 @@ export default class GroupPayments {
 							)
 								.then(() => {
 									console.log('Invocation complete updatePenaltyGroupPaymentRecord');
-									callback(null, createResponse({ statusCode: 200, body: paymentDetail }));
+									const singlePaymentPutRequests = body.PenaltyIds.map(id => ({
+										PutRequest: {
+											Item: {
+												ID: id,
+												PaymentStatus: 'PAID',
+												PaymentDetail: body.PaymentDetail,
+											},
+										},
+									}));
+									const singlePaymentsParams = {
+										RequestItems: {
+											[process.env.DYNAMODB_PAYMENTS_TABLE]: singlePaymentPutRequests,
+										},
+									};
+									this.db.batchWrite(singlePaymentsParams).promise()
+										.then(() => {
+											callback(null, createResponse({ statusCode: 200, body: paymentDetail }));
+										})
+										.catch((err) => {
+											console.log(`Error creating individual payment for group: ${err}`);
+											callback(null, createResponse({
+												statusCode: 400,
+												body: err,
+											}));
+										});
 								})
 								.catch((lambdaError) => {
 									console.log('Invocation error updatePenaltyGroupPaymentRecord');

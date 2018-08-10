@@ -7,6 +7,7 @@ import AWS from 'aws-sdk';
 const url = 'http://localhost:3000/groupPayments';
 const request = supertest(url);
 const groupId = '15xk9i0xujgg';
+let docClient;
 
 describe('penaltyGroups', () => {
 
@@ -15,6 +16,7 @@ describe('penaltyGroups', () => {
 			region: 'eu-west-1',
 			endpoint: 'http://localhost:8000',
 		});
+		docClient = new AWS.DynamoDB.DocumentClient();
 	});
 
 	context('GET', () => {
@@ -61,7 +63,7 @@ describe('penaltyGroups', () => {
 
 	context('POST', () => {
 		context('a new penalty group payment record', () => {
-			it('should return created penalty group payment record with generated ID', (done) => {
+			it('should return created penalty group payment record with generated ID', async () => {
 				const fakePenaltyGroupPaymentRecordPayload = {
 					PaymentCode: '12212',
 					PenaltyType: 'FPN',
@@ -72,29 +74,55 @@ describe('penaltyGroups', () => {
 						PaymentAmount: 120,
 						PaymentDate: 1533200397,
 					},
+					PenaltyIds: [
+						'111111111111_FPN',
+						'222222222222_FPN',
+					],
 				};
-				request
+				const response = await request
 					.post('/')
 					.set('Content-Type', 'application/json')
 					.set('Authorization', 'allow')
 					.send(fakePenaltyGroupPaymentRecordPayload)
 					.expect(201)
-					.expect('Content-Type', 'application/json')
-					.end((err, res) => {
-						if (err) throw err;
-						expect(res.body.ID).toBe('12212');
-						expect(res.body.Payments.FPN)
-							.toEqual({
-								...fakePenaltyGroupPaymentRecordPayload.PaymentDetail,
-								PaymentStatus: 'PAID',
-							});
-						done();
+					.expect('Content-Type', 'application/json');
+
+				expect(response.body.ID).toBe('12212');
+				expect(response.body.Payments.FPN)
+					.toEqual({
+						...fakePenaltyGroupPaymentRecordPayload.PaymentDetail,
+						PaymentStatus: 'PAID',
 					});
+
+				const singlePenaltyPayments = await getPaymentRecords(['111111111111_FPN', '222222222222_FPN']);
+				expect(singlePenaltyPayments).toHaveLength(2);
+				expect(singlePenaltyPayments).toContainEqual({
+					ID: '111111111111_FPN',
+					PaymentStatus: 'PAID',
+					PaymentDetail: {
+						PaymentRef: 'receipt_reference',
+						AuthCode: 'auth_code',
+						PaymentAmount: 120,
+						PaymentDate: 1533200397,
+						PaymentMethod: 'CARD',
+					},
+				});
+				expect(singlePenaltyPayments).toContainEqual({
+					ID: '222222222222_FPN',
+					PaymentStatus: 'PAID',
+					PaymentDetail: {
+						PaymentRef: 'receipt_reference',
+						AuthCode: 'auth_code',
+						PaymentAmount: 120,
+						PaymentDate: 1533200397,
+						PaymentMethod: 'CARD',
+					},
+				});
 			});
 		});
 
 		context('a new IM payment for an existing penalty group payment record', () => {
-			it('should return created penalty group payment record with generated ID', (done) => {
+			it('should return extended penalty group payment record with generated ID', async () => {
 				const fakePenaltyGroupPaymentRecordPayload = {
 					PaymentCode: '12212',
 					PenaltyType: 'IM',
@@ -105,28 +133,43 @@ describe('penaltyGroups', () => {
 						PaymentAmount: 80,
 						PaymentDate: 1533200397,
 					},
+					PenaltyIds: [
+						'333333333333_IM',
+					],
 				};
-				request
+				const response = await request
 					.post('/')
 					.set('Content-Type', 'application/json')
 					.set('Authorization', 'allow')
 					.send(fakePenaltyGroupPaymentRecordPayload)
 					.expect(200)
-					.expect('Content-Type', 'application/json')
-					.end((err, res) => {
-						if (err) throw err;
-						expect(res.body)
-							.toEqual({
-								...fakePenaltyGroupPaymentRecordPayload.PaymentDetail,
-								PaymentStatus: 'PAID',
-							});
-						done();
+					.expect('Content-Type', 'application/json');
+
+				expect(response.body)
+					.toEqual({
+						...fakePenaltyGroupPaymentRecordPayload.PaymentDetail,
+						PaymentStatus: 'PAID',
 					});
+
+				const singlePenaltyPayments = await getPaymentRecords(['333333333333_IM']);
+				expect(singlePenaltyPayments).toEqual([
+					{
+						ID: '333333333333_IM',
+						PaymentStatus: 'PAID',
+						PaymentDetail: {
+							PaymentRef: 'receipt_reference',
+							AuthCode: 'auth_code',
+							PaymentAmount: 80,
+							PaymentDate: 1533200397,
+							PaymentMethod: 'CARD',
+						},
+					},
+				]);
 			});
 		});
 
 		context('an IM payment for an existing penalty group payment record with an existing IM payment', () => {
-			it('should return created penalty group payment record with generated ID', (done) => {
+			it('should respond 400 indicating that a payment of that payment code + type already exists', (done) => {
 				const fakePenaltyGroupPaymentRecordPayload = {
 					PaymentCode: '12212',
 					PenaltyType: 'IM',
@@ -137,6 +180,9 @@ describe('penaltyGroups', () => {
 						PaymentAmount: 80,
 						PaymentDate: 1533200397,
 					},
+					PenaltyIds: [
+						'111111111111_IM',
+					],
 				};
 				request
 					.post('/')
@@ -153,7 +199,7 @@ describe('penaltyGroups', () => {
 		});
 
 		context('a new penalty group payment record with an invalid penalty type', () => {
-			it('should return created penalty group payment record with generated ID', (done) => {
+			it('respond 400 indicating the permitted penalty types', (done) => {
 				const fakePenaltyGroupPaymentRecordPayload = {
 					PaymentCode: '123432jkew',
 					PenaltyType: 'INVALID',
@@ -164,6 +210,9 @@ describe('penaltyGroups', () => {
 						PaymentAmount: 120,
 						PaymentDate: 1533200397,
 					},
+					PenaltyIds: [
+						'111111111111_IM',
+					],
 				};
 				request
 					.post('/')
@@ -183,3 +232,15 @@ describe('penaltyGroups', () => {
 
 });
 
+async function getPaymentRecords(penaltyIds) {
+	const penaltyIdKeyObjs = penaltyIds.map(id => ({ ID: id }));
+	const batchGetParams = {
+		RequestItems: {
+			paymentsTable: {
+				Keys: penaltyIdKeyObjs,
+			},
+		},
+	};
+	const batchGetResp = await docClient.batchGet(batchGetParams).promise();
+	return batchGetResp.Responses.paymentsTable;
+}
