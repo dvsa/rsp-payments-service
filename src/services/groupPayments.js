@@ -77,6 +77,7 @@ export default class GroupPayments {
 												ID: id,
 												PaymentStatus: 'PAID',
 												PaymentDetail: body.PaymentDetail,
+												PenaltyGroupId: body.PaymentCode,
 											},
 										},
 									}));
@@ -151,6 +152,7 @@ export default class GroupPayments {
 												ID: id,
 												PaymentStatus: 'PAID',
 												PaymentDetail: body.PaymentDetail,
+												PenaltyGroupId: body.PaymentCode
 											},
 										},
 									}));

@@ -106,6 +106,7 @@ describe('penaltyGroups', () => {
 						PaymentDate: 1533200397,
 						PaymentMethod: 'CARD',
 					},
+					PenaltyGroupId: '12212',
 				});
 				expect(singlePenaltyPayments).toContainEqual({
 					ID: '222222222222_FPN',
@@ -117,6 +118,7 @@ describe('penaltyGroups', () => {
 						PaymentDate: 1533200397,
 						PaymentMethod: 'CARD',
 					},
+					PenaltyGroupId: '12212',
 				});
 			});
 		});
@@ -163,6 +165,7 @@ describe('penaltyGroups', () => {
 							PaymentDate: 1533200397,
 							PaymentMethod: 'CARD',
 						},
+						PenaltyGroupId: '12212',
 					},
 				]);
 			});
