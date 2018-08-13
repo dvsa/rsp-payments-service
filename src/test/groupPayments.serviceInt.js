@@ -98,7 +98,7 @@ describe('penaltyGroups', () => {
 				expect(singlePenaltyPayments).toHaveLength(2);
 				expect(singlePenaltyPayments).toContainEqual({
 					ID: '111111111111_FPN',
-					PaymentStatus: 'PAID',
+					PenaltyStatus: 'PAID',
 					PaymentDetail: {
 						PaymentRef: 'receipt_reference',
 						AuthCode: 'auth_code',
@@ -110,7 +110,7 @@ describe('penaltyGroups', () => {
 				});
 				expect(singlePenaltyPayments).toContainEqual({
 					ID: '222222222222_FPN',
-					PaymentStatus: 'PAID',
+					PenaltyStatus: 'PAID',
 					PaymentDetail: {
 						PaymentRef: 'receipt_reference',
 						AuthCode: 'auth_code',
@@ -157,7 +157,7 @@ describe('penaltyGroups', () => {
 				expect(singlePenaltyPayments).toEqual([
 					{
 						ID: '333333333333_IM',
-						PaymentStatus: 'PAID',
+						PenaltyStatus: 'PAID',
 						PaymentDetail: {
 							PaymentRef: 'receipt_reference',
 							AuthCode: 'auth_code',

@@ -75,7 +75,7 @@ export default class GroupPayments {
 										PutRequest: {
 											Item: {
 												ID: id,
-												PaymentStatus: 'PAID',
+												PenaltyStatus: 'PAID',
 												PaymentDetail: body.PaymentDetail,
 												PenaltyGroupId: body.PaymentCode,
 											},
@@ -150,9 +150,9 @@ export default class GroupPayments {
 										PutRequest: {
 											Item: {
 												ID: id,
-												PaymentStatus: 'PAID',
+												PenaltyStatus: 'PAID',
 												PaymentDetail: body.PaymentDetail,
-												PenaltyGroupId: body.PaymentCode
+												PenaltyGroupId: body.PaymentCode,
 											},
 										},
 									}));
