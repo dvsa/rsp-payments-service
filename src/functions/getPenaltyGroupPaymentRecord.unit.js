@@ -3,7 +3,6 @@ import sinon from 'sinon';
 import GroupPayments from '../services/groupPayments';
 
 import getPenaltyGroupPaymentRecord from './getPenaltyGroupPaymentRecord';
-import createResponse from '../utils/createResponse';
 import groupPayments from '../../mock-data/fake-group-payments.json';
 
 describe('get', () => {
@@ -25,12 +24,7 @@ describe('get', () => {
 				},
 			};
 			payment = groupPayments.filter(item => item.ID === '15xk9i0xujgg');
-			sinon.stub(GroupPayments.prototype, 'getPenaltyGroupPaymentRecord').callsFake((id, callback) => {
-				const response = createResponse({
-					body: payment,
-				});
-				callback(null, response);
-			});
+			sinon.stub(GroupPayments.prototype, 'getPenaltyGroupPaymentRecord').resolves(payment);
 		});
 
 		it('should return a 200 success with the correct payment', (done) => {

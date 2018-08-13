@@ -21,28 +21,25 @@ describe('penaltyGroups', () => {
 
 	context('GET', () => {
 		context('an individual penalty group payment record', () => {
-			it('should return the payment details of the group', (done) => {
-				request
+			it('should return the payment details of the group', async () => {
+				const resp = await request
 					.get(`/${groupId}`)
 					.set('Content-Type', 'application/json')
 					.set('Authorization', 'allow')
 					.expect(200)
-					.expect('Content-Type', 'application/json')
-					.end((err, res) => {
-						if (err) throw err;
-						expect(res.body.ID).toEqual(groupId);
-						expect(res.body.Payments.FPN.PaymentRef).toBe('REF12345');
-						expect(res.body.Payments.FPN.AuthCode).toBe('1234TBD');
-						expect(res.body.Payments.FPN.PaymentAmount).toBe(800);
-						expect(res.body.Payments.FPN.PaymentDate).toBe(1519300376667);
-						expect(res.body.Payments.FPN.PaymentStatus).toBe('UNPAID');
-						expect(res.body.Payments.IM.PaymentRef).toBe('RJF12345');
-						expect(res.body.Payments.IM.AuthCode).toBe('1234TBG');
-						expect(res.body.Payments.IM.PaymentAmount).toBe(80);
-						expect(res.body.Payments.IM.PaymentDate).toBe(1519300376667);
-						expect(res.body.Payments.IM.PaymentStatus).toBe('PAID');
-						done();
-					});
+					.expect('Content-Type', 'application/json');
+
+				expect(resp.body.ID).toEqual(groupId);
+				expect(resp.body.Payments.FPN.PaymentRef).toBe('REF12345');
+				expect(resp.body.Payments.FPN.AuthCode).toBe('1234TBD');
+				expect(resp.body.Payments.FPN.PaymentAmount).toBe(800);
+				expect(resp.body.Payments.FPN.PaymentDate).toBe(1519300376667);
+				expect(resp.body.Payments.FPN.PaymentStatus).toBe('UNPAID');
+				expect(resp.body.Payments.IM.PaymentRef).toBe('RJF12345');
+				expect(resp.body.Payments.IM.AuthCode).toBe('1234TBG');
+				expect(resp.body.Payments.IM.PaymentAmount).toBe(80);
+				expect(resp.body.Payments.IM.PaymentDate).toBe(1519300376667);
+				expect(resp.body.Payments.IM.PaymentStatus).toBe('PAID');
 			});
 		});
 		context('an individual penalty group payment record that doesn\'t exist', () => {

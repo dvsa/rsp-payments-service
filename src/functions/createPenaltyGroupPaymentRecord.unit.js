@@ -41,7 +41,6 @@ describe('createPenaltyGroupPaymentRecord', () => {
 				expect(JSON.parse(res.body)).toEqual(payment);
 				done();
 			});
-
 		});
 
 	});
