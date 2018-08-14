@@ -10,179 +10,140 @@ export default class GroupPayments {
 		this.updatePenaltyGroupPaymentRecordArn = updatePenaltyGroupPaymentRecordArn;
 	}
 
-	createPenaltyGroupPaymentRecord(body, callback) {
-		let error;
-		let response;
-
-		if (body.PaymentCode === '') {
-			const err = 'Invalid Id';
-			const errorToReturn = createResponse({
-				body: { err },
-				statusCode: 400,
-			});
-			callback(null, errorToReturn);
-		}
-		const isPenaltyTypeValid = ['FPN', 'IM', 'CDN'].includes(body.PenaltyType);
-		if (!isPenaltyTypeValid) {
-			const err = `Invalid penalty type ${body.PenaltyType}, must be either FPN, IM or CDN`;
-			const errorToReturn = createResponse({
-				body: { err },
-				statusCode: 400,
-			});
-			callback(null, errorToReturn);
+	async createPenaltyGroupPaymentRecord(body, callback) {
+		const validationResponse = GroupPayments.tryGenerateValidationErrorResponse(body);
+		if (validationResponse) {
+			return callback(null, validationResponse);
 		}
 
-		const paymentDetail = {
-			...body.PaymentDetail,
+		const {
+			PaymentDetail,
+			PenaltyType,
+			PaymentCode,
+			PenaltyIds,
+		} = body;
+		const paidPayment = {
+			...PaymentDetail,
 			PaymentStatus: 'PAID',
 		};
 
-		const putParams = {
-			TableName: this.tableName,
-			Item: {
-				ID: body.PaymentCode,
-				Payments: {
-					[body.PenaltyType]: paymentDetail,
-				},
-			},
-		};
+		try {
+			const groupPayment = await this.getPenaltyGroupPaymentRecord(PaymentCode);
+			let resp;
+			if (isEmptyObject(groupPayment)) {
+				resp = await this._createNewGroupPayment(PaymentCode, PenaltyType, paidPayment);
+			} else {
+				resp = await this._extendGroupPayment(PaymentCode, paidPayment, PenaltyType, groupPayment);
+			}
 
-		const getParams = {
-			TableName: this.tableName,
-			Key: { ID: body.PaymentCode },
-		};
-		this.db.get(getParams).promise()
-			.then((data) => {
-				if (isEmptyObject(data)) {
-					// Create a new record if item doesn't exist
-					console.log('Create a new record if item doesn\'t exist');
-					this.db.put(putParams).promise()
-						.then(() => {
-							response = createResponse({
-								body: putParams.Item,
-								statusCode: 201,
-							});
-							console.log(`Invoke updatePenaltyGroupPaymentRecord, args: ${body.PaymentCode}, ${paymentDetail.PaymentStatus}, ${body.PenaltyType}`);
-							this._updatePenaltyGroupPaymentRecord(
-								body.PaymentCode,
-								paymentDetail.PaymentStatus,
-								body.PenaltyType,
-								callback,
-							)
-								.then(() => {
-									console.log('Invocation complete updatePenaltyGroupPaymentRecord');
-									callback(null, response);
-								})
-								.catch((lambdaError) => {
-									console.log('Invocation error updatePenaltyGroupPaymentRecord');
-									console.log(lambdaError);
-									callback(null, createResponse({
-										statusCode: 400,
-										body: lambdaError,
-									}));
-								});
-						})
-						.catch((_err) => {
-							error = createResponse({
-								body: { _err },
-								statusCode: 500,
-							});
-							callback(null, error);
-						});
-				} else {
-					// Update existing item
-					const paymentItem = data.Item.Payments[body.PenaltyType];
-					// Return 400 bad request if payment already exists
-					if (typeof paymentItem !== 'undefined' && !isEmptyObject(paymentItem)) {
-						const err = `Payment for ${body.PenaltyType} already exists in ${body.PaymentCode} payment group`;
-						callback(null, createResponse({
-							statusCode: 400,
-							body: { err },
-						}));
-						return;
-					}
-					data.Item.Payments[body.PenaltyType] = paymentDetail;
-					const putUpdateParams = {
-						TableName: this.tableName,
-						Item: data.Item,
-						ConditionExpression: 'attribute_exists(#ID)',
-						ExpressionAttributeNames: {
-							'#ID': 'ID',
-						},
-					};
-					this.db.put(putUpdateParams).promise()
-						.then(() => {
-							console.log(`Invoke updatePenaltyGroupPaymentRecord, args: ${body.PaymentCode}, ${body.PaymentStatus}, ${body.PenaltyType}`);
-							this._updatePenaltyGroupPaymentRecord(
-								body.PaymentCode,
-								paymentDetail.PaymentStatus,
-								body.PenaltyType,
-								callback,
-							)
-								.then(() => {
-									console.log('Invocation complete updatePenaltyGroupPaymentRecord');
-									callback(null, createResponse({ statusCode: 200, body: paymentDetail }));
-								})
-								.catch((lambdaError) => {
-									console.log('Invocation error updatePenaltyGroupPaymentRecord');
-									console.log(lambdaError);
-									callback(null, createResponse({
-										statusCode: 400,
-										body: lambdaError,
-									}));
-								});
-						})
-						.catch((err) => {
-							error = createResponse({
-								body: { err },
-								statusCode: 500,
-							});
-							callback(null, error);
-						});
-				}
-			})
-			// Catch for initial db.get
-			.catch((err) => {
-				error = createResponse({
-					body: { err },
-					statusCode: 500,
-				});
-				callback(null, error);
-			});
+			await Promise.all([
+				this._applyPaymentToPenaltyGroup(PaymentCode, paidPayment.PaymentStatus, PenaltyType),
+				this._createIndividualPaymentRecords(PenaltyIds, PaymentDetail, PaymentCode),
+			]);
 
+			return callback(null, resp);
+		} catch (err) {
+			console.log(err);
+			if (err.statusCode) {
+				return callback(null, err);
+			}
+			return callback(null, createResponse(null, { statusCode: 500 }));
+		}
 	}
 
-	getPenaltyGroupPaymentRecord(id, callback) {
-		let error;
-		let response;
-
+	async getPenaltyGroupPaymentRecord(id) {
 		const params = {
 			TableName: this.tableName,
 			Key: { ID: id },
 		};
+		const resp = await this.db.get(params).promise();
+		return resp.Item || {};
+	}
 
-		this.db.get(params, (err, data) => {
-			if (err) {
-				error = createResponse({
-					body: { err },
-					statusCode: 500,
-				});
-				callback(error);
-			} else {
-				if (isEmptyObject(data)) callback(null, createResponse({ statusCode: 404 }));
-				const payment = data.Item;
-				response = createResponse({ body: payment });
-				callback(null, response);
-			}
+	async _createIndividualPaymentRecords(penaltyIds, paymentDetail, paymentCode) {
+		try {
+			const singlePaymentPutRequests = penaltyIds.map(id => ({
+				PutRequest: {
+					Item: {
+						ID: id,
+						PenaltyStatus: 'PAID',
+						PaymentDetail: paymentDetail,
+						PenaltyGroupId: paymentCode,
+					},
+				},
+			}));
+			const singlePaymentsParams = {
+				RequestItems: {
+					[process.env.DYNAMODB_PAYMENTS_TABLE]: singlePaymentPutRequests,
+				},
+			};
+			return this.db.batchWrite(singlePaymentsParams).promise();
+		} catch (err) {
+			throw new Error(`Error batchWriting individual payment records: ${err}`);
+		}
+	}
+
+	async _createNewGroupPayment(paymentCode, penaltyType, paymentDetail) {
+		try {
+			console.log('Create a new record if item doesn\'t exist');
+			const putParams = {
+				TableName: this.tableName,
+				Item: {
+					ID: paymentCode,
+					Payments: {
+						[penaltyType]: paymentDetail,
+					},
+				},
+			};
+			await this.db.put(putParams).promise();
+			return createResponse({ body: putParams.Item, statusCode: 201 });
+		} catch (err) {
+			throw createResponse({ body: 'Error creating new group payment record', statusCode: 500 });
+		}
+	}
+
+	async _extendGroupPayment(paymentCode, paymentDetail, penaltyType, existingPayment) {
+		const paymentForType = existingPayment[penaltyType];
+		if (typeof paymentForType !== 'undefined' && !isEmptyObject(paymentForType)) {
+			const msg = `Payment for ${penaltyType} already exists in ${paymentCode} payment group`;
+			throw GroupPayments.create400Response(msg);
+		}
+		existingPayment[penaltyType] = paymentDetail;
+		const putUpdateParams = {
+			TableName: this.tableName,
+			Item: existingPayment,
+			ConditionExpression: 'attribute_exists(#ID)',
+			ExpressionAttributeNames: {
+				'#ID': 'ID',
+			},
+		};
+		await this.db.put(putUpdateParams).promise();
+		return createResponse({ statusCode: 200, body: paymentDetail });
+	}
+
+	async _applyPaymentToPenaltyGroup(id, paymentStatus, penaltyType) {
+		console.log(`Invoke updatePenaltyGroupPaymentRecord, args: ${id}, ${paymentStatus}, ${penaltyType}`);
+		return lambda.invoke({
+			FunctionName: this.updatePenaltyGroupPaymentRecordArn,
+			Payload: `{"body": { "id": "${id}", "paymentStatus": "${paymentStatus}", "penaltyType": "${penaltyType}" } }`,
+		}).promise();
+	}
+
+	static create400Response(err) {
+		return createResponse({
+			body: { err },
+			statusCode: 400,
 		});
 	}
 
-	_updatePenaltyGroupPaymentRecord(id, paymentSatus, penaltyType) {
-		return lambda.invoke({
-			FunctionName: this.updatePenaltyGroupPaymentRecordArn,
-			Payload: `{"body": { "id": "${id}", "paymentStatus": "${paymentSatus}", "penaltyType": "${penaltyType}" } }`,
-		})
-			.promise();
+	static tryGenerateValidationErrorResponse(body) {
+		if (body.PaymentCode === '') {
+			return GroupPayments.create400Response('Invalid Id');
+		}
+		if (!['FPN', 'IM', 'CDN'].includes(body.PenaltyType)) {
+			const err = `Invalid penalty type ${body.PenaltyType}, must be either FPN, IM or CDN`;
+			return GroupPayments.create400Response(err);
+		}
+		return null;
 	}
-
 }
