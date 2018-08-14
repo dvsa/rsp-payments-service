@@ -103,12 +103,12 @@ export default class GroupPayments {
 	}
 
 	async _extendGroupPayment(paymentCode, paymentDetail, penaltyType, existingPayment) {
-		const paymentForType = existingPayment[penaltyType];
+		const paymentForType = existingPayment.Payments[penaltyType];
 		if (typeof paymentForType !== 'undefined' && !isEmptyObject(paymentForType)) {
 			const msg = `Payment for ${penaltyType} already exists in ${paymentCode} payment group`;
 			throw GroupPayments.create400Response(msg);
 		}
-		existingPayment[penaltyType] = paymentDetail;
+		existingPayment.Payments[penaltyType] = paymentDetail;
 		const putUpdateParams = {
 			TableName: this.tableName,
 			Item: existingPayment,
