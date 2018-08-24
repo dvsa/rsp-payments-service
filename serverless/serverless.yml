@@ -1,0 +1,373 @@
+service: rsp-payments
+
+frameworkVersion: ">=1.1.0 <2.0.0"
+custom:
+  documentation:
+    models:
+      - name: ErrorResponse
+        description: This is an error
+        contentType: application/json
+        schema: ${file(models/ErrorResponse.json)}
+      - name: PutRequest
+        description: This is a put request
+        contentType: application/json
+        schema: ${file(models/PutRequest.json)}
+      - name: GetResponse
+        description: This is a getresponse
+        contentType: application/json
+        schema: ${file(models/GetResponse.json)}
+      - name: PaymentRequest
+        description: This is a payment request
+        contentType: application/json
+        schema: ${file(models/PaymentRequest.json)}
+      - name: PaymentResponse
+        description: This is a payment response
+        contentType: application/json
+        schema: ${file(models/PaymentResponse.json)}
+      - name: PaymentsResponse
+        description: This is a Payments response
+        contentType: application/json
+        schema: ${file(models/PaymentsResponse.json)}
+    version: '1'
+    title: 'RSP Payments API'
+    description: 'RSP Payments api'
+  dynamodb:
+    start:
+      port: 8000
+      inMemory: true
+      migrate: true
+      seed: true
+    seed:
+      test:
+        sources:
+          -
+            table: paymentsTable
+            sources: [./mock-data/fake-payments.json]
+          -
+            table: groupPaymentsTable
+            sources: [./mock-data/fake-group-payments.json]
+
+plugins:
+  - serverless-dynamodb-local
+  - serverless-offline
+  - serverless-openapi-documentation
+provider:
+  name: aws
+  runtime: nodejs6.10
+  region: eu-west-1
+
+functions:
+  list:
+    handler: handler.list
+    memorySize: 128
+    events:
+      -
+        http:
+          path: payments
+          method: get
+          authorizer: aws_iam
+          cors: true
+          documentation:
+            summary: "List of Payments"
+            description: "Lists of Payments"
+            requestBody:
+              description: "None"
+            requestModels:
+              application/json: "GetRequest"
+            methodResponses:
+              - statusCode: 200
+                responseBody:
+                  description: "A list of Payments"
+                responseModels:
+                  application/json: "PaymentsResponse"
+              - statusCode: 500
+                responseBody:
+                  description: "An error message when listing Payments"
+                responseModels:
+                  application/json: "ErrorResponse"
+  get:
+    handler: handler.get
+    memorySize: 128
+    events:
+      -
+        http:
+          path: payments/{id}
+          method: get
+          authorizer: aws_iam
+          cors: true
+          documentation:
+            summary: "Get payment"
+            description: "Fetches the details of the specified payment"
+            pathParams:
+              - name: "id"
+                description: "The id of the payment to fetch"
+                schema:
+                  type: "string"
+                  pattern: "^[0-9]+$"          
+            requestBody:
+              description: "Nothing"
+            requestModels:
+              application/json: "GetRequest"
+            methodResponses:
+              - statusCode: 200
+                responseBody:
+                  description: "Details of the payment"
+                responseModels:
+                  application/json: "PaymentResponse"
+              - statusCode: 404
+                responseBody:
+                  description: "Not found error"
+                responseModels:
+                  application/json: "ErrorResponse"
+              - statusCode: 500
+                responseBody:
+                  description: "500 server error"
+                responseModels:
+                  application/json: "ErrorResponse"
+  getPenaltyGroupPaymentRecord:
+    handler: handler.getPenaltyGroupPaymentRecord
+    memorySize: 128
+    events:
+      -
+        http:
+          path: groupPayments/{id}
+          method: get
+          authorizer: aws_iam
+          cors: true
+          documentation:
+            summary: "Get payment"
+            description: "Fetches the details of the specified payment"
+            pathParams:
+              - name: "id"
+                description: "The id of the payment to fetch"
+                schema:
+                  type: "string"
+                  pattern: "^[0-9]+$"          
+            requestBody:
+              description: "Nothing"
+            requestModels:
+              application/json: "GetRequest"
+            methodResponses:
+              - statusCode: 200
+                responseBody:
+                  description: "Details of the payment"
+                responseModels:
+                  application/json: "PaymentResponse"
+              - statusCode: 404
+                responseBody:
+                  description: "Not found error"
+                responseModels:
+                  application/json: "ErrorResponse"
+              - statusCode: 500
+                responseBody:
+                  description: "500 server error"
+                responseModels:
+                  application/json: "ErrorResponse"
+  create:
+    handler: handler.create
+    memorySize: 128
+    events:
+      -
+        http:
+          path: payments
+          method: post
+          authorizer: aws_iam
+          cors: true
+          documentation:
+            summary: "Create payment"
+            description: "Creates a new payment"
+            requestBody:
+              description: "Details of payment"
+            requestModels:
+              application/json: "PaymentRequest"
+            methodResponses:
+              - statusCode: 200
+                responseBody:
+                  description: "Details of the created payment"
+                responseModels:
+                  application/json: "PaymentResponse"
+              - statusCode: 500
+                responseBody:
+                  description: "500 server error"
+                responseModels:
+                  application/json: "ErrorResponse"
+  createPenaltyGroupPaymentRecord:
+    handler: handler.createPenaltyGroupPaymentRecord
+    memorySize: 128
+    events:
+      -
+        http:
+          path: groupPayments
+          method: post
+          authorizer: aws_iam
+          cors: true
+          documentation:
+            summary: "Create payment"
+            description: "Creates a new payment"
+            requestBody:
+              description: "Details of payment"
+            requestModels:
+              application/json: "PaymentRequest"
+            methodResponses:
+              - statusCode: 200
+                responseBody:
+                  description: "Details of the created payment"
+                responseModels:
+                  application/json: "PaymentResponse"
+              - statusCode: 500
+                responseBody:
+                  description: "500 server error"
+                responseModels:
+                  application/json: "ErrorResponse"
+  batchFetch:
+    handler: handler.batchFetch
+    memorySize: 128
+    events:
+      -
+        http:
+          path: payments/batches
+          method: post
+          authorizer: aws_iam
+          cors: true
+          documentation:
+            summary: "Fetch a batch of payments"
+            description: "Retrieves the requested payments"
+            requestBody:
+              description: "Details of payment"
+            requestModels:
+              application/json: "PaymentRequest"
+            methodResponses:
+              - statusCode: 200
+                responseBody:
+                  description: "Details of the created payment"
+                responseModels:
+                  application/json: "PaymentResponse"
+              - statusCode: 500
+                responseBody:
+                  description: "500 server error"
+                responseModels:
+                  application/json: "ErrorResponse"                          
+  delete:
+    handler: handler.remove
+    memorySize: 128
+    events:
+      -
+        http:
+          path: payments/{id}
+          method: delete
+          authorizer: aws_iam
+          cors: true
+          documentation:
+            summary: "Delete payment details"
+            description: "Deletes an existing payment"
+            pathParams:
+              - name: "id"
+                description: "The id of the payment to delete"
+                schema:
+                  type: "string"
+                  pattern: "^[0-9]+$"
+            requestBody:
+              description: "Details of deleted payment"
+            requestModels:
+              application/json: "PaymentRequest"
+            methodResponses:
+              - statusCode: 200
+                responseBody:
+                  description: "Details of the deleted payment"
+                responseModels:
+                  application/json: "PaymentResponse"
+              - statusCode: 500
+                responseBody:
+                  description: "500 server error"
+                responseModels:
+                  application/json: "ErrorResponse"          
+  update:
+    handler: handler.update
+    memorySize: 128
+    events:
+      -
+        http:
+          path: payments/{id}
+          method: put
+          authorizer: aws_iam
+          cors: true
+          documentation:
+            summary: "Update payment details"
+            description: "Updates the details of an existing payment"
+            pathParams:
+              - name: "id"
+                description: "The id of the payment to update"
+                schema:
+                  type: "string"
+                  pattern: "^[0-9]+$"
+            requestBody:
+              description: "Details of updated payment"
+            requestModels:
+              application/json: "PaymentRequest"
+            methodResponses:
+              - statusCode: 200
+                responseBody:
+                  description: "Details of the updated payment"
+                responseModels:
+                  application/json: "PaymentResponse"
+              - statusCode: 500
+                responseBody:
+                  description: "500 server error"
+                responseModels:
+                  application/json: "ErrorResponse"          
+resources:
+  Resources:
+    paymentsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: paymentsTable
+        AttributeDefinitions:
+          - AttributeName: ID
+            AttributeType: S
+        KeySchema:
+          - AttributeName: ID
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
+    groupPaymentsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: groupPaymentsTable
+        AttributeDefinitions:
+          - AttributeName: ID
+            AttributeType: S
+        KeySchema:
+          - AttributeName: ID
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
+    DynamoDBIamPolicy:
+      Type: AWS::IAM::Policy
+      DependsOn: paymentsTable
+      Properties:
+        PolicyName: lambda-dynamodb
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:Scan
+                - dynamodb:GetItem
+                - dynamodb:PutItem
+                - dynamodb:BatchGetItem 
+                - dynamodb:UpdateItem
+                - dynamodb:DeleteItem
+              Resource: arn:aws:dynamodb:*:*:table/paymentsTable
+            - Effect: Allow
+              Action:
+                - dynamodb:Scan
+                - dynamodb:GetItem
+                - dynamodb:PutItem
+                - dynamodb:BatchGetItem 
+                - dynamodb:UpdateItem
+                - dynamodb:DeleteItem
+              Resource: arn:aws:dynamodb:*:*:table/groupPaymentsTable
+        Roles:
+          - Ref: IamRoleLambdaExecution
