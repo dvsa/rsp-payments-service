@@ -11,6 +11,7 @@ const payments = new Payments(
 
 export default (event, context, callback) => {
 
-	payments.delete(event.pathParameters.id, callback);
+	const data = JSON.parse(event.body);
+	payments.batchFetch(data.ids, callback);
 
 };
