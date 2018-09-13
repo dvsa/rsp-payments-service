@@ -25,7 +25,7 @@ export default class Payments {
 
 		const params = {
 			RequestItems: {
-				paymentsTable: {
+				[process.env.DYNAMODB_PAYMENTS_TABLE]: {
 					Keys: keys,
 					ProjectionExpression: 'ID, PaymentDetail, PenaltyStatus',
 				},
@@ -36,6 +36,7 @@ export default class Payments {
 
 		function onBatch(err, data) {
 			if (err) {
+				console.log(err);
 				error = createResponse({
 					body: {
 						err,
@@ -44,7 +45,7 @@ export default class Payments {
 				});
 				callback(error);
 			} else {
-				const payments = data.Responses.paymentsTable;
+				const payments = data.Responses[process.env.DYNAMODB_PAYMENTS_TABLE];
 
 				response = createResponse({
 					body: {
