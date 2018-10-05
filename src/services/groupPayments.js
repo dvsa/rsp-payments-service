@@ -60,6 +60,31 @@ export default class GroupPayments {
 		return resp.Item || {};
 	}
 
+	async deletePenaltyGroupPaymentRecord(id, callback) {
+		let error;
+		let response;
+
+		const params = {
+			TableName: this.tableName,
+			Key: { ID: id },
+			ReturnValues: 'ALL_OLD',
+		};
+
+		try {
+			await this.db.delete(params).promise();
+			response = createResponse({
+				body: {},
+			});
+			callback(null, response);
+		} catch (err) {
+			error = createResponse({
+				body: 'Couldn\'t remove the payment.',
+				statusCode: err.statusCode || 501,
+			});
+			callback(error);
+		}
+	}
+
 	async _createIndividualPaymentRecords(penaltyIds, paymentDetail, paymentCode) {
 		try {
 			const singlePaymentPutRequests = penaltyIds.map(id => ({
