@@ -67,14 +67,10 @@ export default class GroupPayments {
 		return resp.Item || {};
 	}
 
-	async deletePenaltyGroupPaymentRecord(id, type, penaltyGroupDetails, callback) {
-		console.log('*********** penaltyGroupDetails **************');
-		console.log(penaltyGroupDetails);
+	async deletePenaltyGroupPaymentRecord(id, type, callback) {
 		let error;
 		let response;
-		const penaltyDocsToUpdate = penaltyGroupDetails.penaltyDetails.filter(p => p.type === type);
-		console.log('********* penaltyDocsToUpdate ************');
-		console.log(penaltyDocsToUpdate);
+
 		const createPutUpdateParams = item => ({
 			TableName: this.tableName,
 			Item: item,
