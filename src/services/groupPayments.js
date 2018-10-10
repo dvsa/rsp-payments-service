@@ -106,7 +106,7 @@ export default class GroupPayments {
 			// Otherwise just update the Payments object
 			await this.db.put(createPutUpdateParams(penaltyGroupPaymentRecord)).promise();
 			// Need to update the document(s) with the new payment status
-			await Promise.all(this._createMultipleDocumentUpdateInvocations(penaltyDocsToUpdate));
+			await Promise.all(this._createMultipleDocumentUpdateInvocations(penaltyIds));
 			response = createResponse({ body: penaltyGroupPaymentRecord });
 			return callback(null, response);
 		} catch (err) {
