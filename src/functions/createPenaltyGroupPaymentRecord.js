@@ -6,6 +6,7 @@ const payments = new GroupPayments(
 	doc,
 	process.env.DYNAMODB_GROUP_PAYMENTS_TABLE,
 	process.env.PENALTYGROUP_UPDATE_ARN,
+	process.env.DOCUMENTUPDATE_ARN,
 );
 
 export default (event, context, callback) => {
