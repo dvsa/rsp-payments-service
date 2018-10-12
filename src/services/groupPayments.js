@@ -70,6 +70,7 @@ export default class GroupPayments {
 	async deletePenaltyGroupPaymentRecord(id, type, callback) {
 		let error;
 		let response;
+		console.log(`id, type: ${id}, ${type}`);
 
 		const createPutUpdateParams = item => ({
 			TableName: this.tableName,
@@ -89,6 +90,7 @@ export default class GroupPayments {
 		try {
 			const penaltyGroupPaymentRecord = await this.getPenaltyGroupPaymentRecord(id);
 			const { PaymentAmount, penaltyIds } = penaltyGroupPaymentRecord.Payments[type];
+			console.log(`PaymentAmount, penaltyIds: ${PaymentAmount}, ${penaltyIds}`);
 			delete penaltyGroupPaymentRecord.Payments[type];
 			// Delete the entire item if there are no other payments
 			if (isEmptyObject(penaltyGroupPaymentRecord.Payments)) {
@@ -110,6 +112,8 @@ export default class GroupPayments {
 			response = createResponse({ body: penaltyGroupPaymentRecord });
 			return callback(null, response);
 		} catch (err) {
+			console.log('error deleting penalty group payment record');
+			console.log(err);
 			error = createResponse({
 				body: `Couldn't remove the payment of type: ${type}, for code ${id}`,
 				statusCode: err.statusCode || 501,
@@ -122,7 +126,7 @@ export default class GroupPayments {
 		return penaltyReferences.map((ref) => {
 			return lambda.invoke({
 				FunctionName: this.documentUpdateArn,
-				Payload: `{"body": { "id": "${ref}_${type}", "paymentStatus": "UNPAID", "paymentAmount": "${amount}","penaltyRefNo": "${ref}", "penaltyType":"${type}", "paymentToken":"${paymentCode}" } }`,
+				Payload: `{"body": { "id": "${ref}", "paymentStatus": "UNPAID", "paymentAmount": "${amount}","penaltyRefNo": "${ref.split('_')[0]}", "penaltyType":"${type}", "paymentToken":"${paymentCode}" } }`,
 			}).promise();
 		});
 	}
