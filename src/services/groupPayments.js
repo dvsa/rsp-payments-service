@@ -4,10 +4,11 @@ import isEmptyObject from '../utils/isEmptyObject';
 
 const lambda = new Lambda({ region: 'eu-west-1' });
 export default class GroupPayments {
-	constructor(db, tableName, updatePenaltyGroupPaymentRecordArn) {
+	constructor(db, tableName, updatePenaltyGroupPaymentRecordArn, documentUpdateArn) {
 		this.db = db;
 		this.tableName = tableName;
 		this.updatePenaltyGroupPaymentRecordArn = updatePenaltyGroupPaymentRecordArn;
+		this.documentUpdateArn = documentUpdateArn;
 	}
 
 	async createPenaltyGroupPaymentRecord(body, callback) {
@@ -31,9 +32,15 @@ export default class GroupPayments {
 			const groupPayment = await this.getPenaltyGroupPaymentRecord(PaymentCode);
 			let resp;
 			if (isEmptyObject(groupPayment)) {
-				resp = await this._createNewGroupPayment(PaymentCode, PenaltyType, paidPayment);
+				resp = await this._createNewGroupPayment(PaymentCode, PenaltyType, paidPayment, PenaltyIds);
 			} else {
-				resp = await this._extendGroupPayment(PaymentCode, paidPayment, PenaltyType, groupPayment);
+				resp = await this._extendGroupPayment(
+					PaymentCode,
+					paidPayment,
+					PenaltyType,
+					groupPayment,
+					PenaltyIds,
+				);
 			}
 
 			await Promise.all([
@@ -60,6 +67,66 @@ export default class GroupPayments {
 		return resp.Item || {};
 	}
 
+	async deletePenaltyGroupPaymentRecord(id, type, callback) {
+		let error;
+		let response;
+
+		const createPutUpdateParams = item => ({
+			TableName: this.tableName,
+			Item: item,
+			ConditionExpression: 'attribute_exists(#ID)',
+			ExpressionAttributeNames: {
+				'#ID': 'ID',
+			},
+		});
+
+		const createDeleteParams = deleteId => ({
+			TableName: this.tableName,
+			Key: { ID: deleteId },
+			ReturnValues: 'ALL_OLD',
+		});
+
+		try {
+			const penaltyGroupPaymentRecord = await this.getPenaltyGroupPaymentRecord(id);
+			const { PaymentAmount, penaltyIds } = penaltyGroupPaymentRecord.Payments[type];
+			delete penaltyGroupPaymentRecord.Payments[type];
+			// Delete the entire item if there are no other payments
+			if (isEmptyObject(penaltyGroupPaymentRecord.Payments)) {
+				await this.db.delete(createDeleteParams(id)).promise();
+				// Need to update the document with the new payment status
+				await Promise.all(this._createMultipleDocumentUpdateInvocations(
+					penaltyIds,
+					type,
+					PaymentAmount,
+					id,
+				));
+				response = createResponse({ body: {} });
+				return callback(null, response);
+			}
+			// Otherwise just update the Payments object
+			await this.db.put(createPutUpdateParams(penaltyGroupPaymentRecord)).promise();
+			// Need to update the document(s) with the new payment status
+			await Promise.all(this._createMultipleDocumentUpdateInvocations(penaltyIds));
+			response = createResponse({ body: penaltyGroupPaymentRecord });
+			return callback(null, response);
+		} catch (err) {
+			error = createResponse({
+				body: `Couldn't remove the payment of type: ${type}, for code ${id}`,
+				statusCode: err.statusCode || 501,
+			});
+			return callback(error);
+		}
+	}
+
+	_createMultipleDocumentUpdateInvocations(penaltyReferences, type, amount, paymentCode) {
+		return penaltyReferences.map((ref) => {
+			return lambda.invoke({
+				FunctionName: this.documentUpdateArn,
+				Payload: `{"body": { "id": "${ref}_${type}", "paymentStatus": "UNPAID", "paymentAmount": "${amount}","penaltyRefNo": "${ref}", "penaltyType":"${type}", "paymentToken":"${paymentCode}" } }`,
+			}).promise();
+		});
+	}
+
 	async _createIndividualPaymentRecords(penaltyIds, paymentDetail, paymentCode) {
 		try {
 			const singlePaymentPutRequests = penaltyIds.map(id => ({
@@ -83,7 +150,7 @@ export default class GroupPayments {
 		}
 	}
 
-	async _createNewGroupPayment(paymentCode, penaltyType, paymentDetail) {
+	async _createNewGroupPayment(paymentCode, penaltyType, paymentDetail, penaltyIds) {
 		try {
 			console.log('Create a new record if item doesn\'t exist');
 			const putParams = {
@@ -91,7 +158,10 @@ export default class GroupPayments {
 				Item: {
 					ID: paymentCode,
 					Payments: {
-						[penaltyType]: paymentDetail,
+						[penaltyType]: {
+							...paymentDetail,
+							penaltyIds,
+						},
 					},
 				},
 			};
@@ -102,13 +172,16 @@ export default class GroupPayments {
 		}
 	}
 
-	async _extendGroupPayment(paymentCode, paymentDetail, penaltyType, existingPayment) {
+	async _extendGroupPayment(paymentCode, paymentDetail, penaltyType, existingPayment, penaltyIds) {
 		const paymentForType = existingPayment.Payments[penaltyType];
 		if (typeof paymentForType !== 'undefined' && !isEmptyObject(paymentForType)) {
 			const msg = `Payment for ${penaltyType} already exists in ${paymentCode} payment group`;
 			throw GroupPayments.create400Response(msg);
 		}
-		existingPayment.Payments[penaltyType] = paymentDetail;
+		existingPayment.Payments[penaltyType] = {
+			...paymentDetail,
+			penaltyIds,
+		};
 		const putUpdateParams = {
 			TableName: this.tableName,
 			Item: existingPayment,

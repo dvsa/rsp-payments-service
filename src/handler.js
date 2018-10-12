@@ -6,6 +6,7 @@ import update from './functions/update';
 import batchFetch from './functions/batchFetch';
 import createPenaltyGroupPaymentRecord from './functions/createPenaltyGroupPaymentRecord';
 import getPenaltyGroupPaymentRecord from './functions/getPenaltyGroupPaymentRecord';
+import deletePenaltyGroupPaymentRecord from './functions/deletePenaltyGroupPaymentRecord';
 
 const handler = {
 	list,
@@ -16,6 +17,7 @@ const handler = {
 	batchFetch,
 	createPenaltyGroupPaymentRecord,
 	getPenaltyGroupPaymentRecord,
+	deletePenaltyGroupPaymentRecord,
 };
 
 export default handler;
