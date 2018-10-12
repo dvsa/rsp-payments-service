@@ -110,6 +110,8 @@ export default class GroupPayments {
 			response = createResponse({ body: penaltyGroupPaymentRecord });
 			return callback(null, response);
 		} catch (err) {
+			console.log('error deleting penalty group payment record');
+			console.log(err);
 			error = createResponse({
 				body: `Couldn't remove the payment of type: ${type}, for code ${id}`,
 				statusCode: err.statusCode || 501,
