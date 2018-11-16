@@ -1,3 +1,4 @@
+// @ts-check
 import { Lambda } from 'aws-sdk';
 import createResponse from '../utils/createResponse';
 import isEmptyObject from '../utils/isEmptyObject';
@@ -54,7 +55,7 @@ export default class GroupPayments {
 			if (err.statusCode) {
 				return callback(null, err);
 			}
-			return callback(null, createResponse(null, { statusCode: 500 }));
+			return callback(null, createResponse({ statusCode: 500 }));
 		}
 	}
 
@@ -96,19 +97,14 @@ export default class GroupPayments {
 			if (isEmptyObject(penaltyGroupPaymentRecord.Payments)) {
 				await this.db.delete(createDeleteParams(id)).promise();
 				// Need to update the document with the new payment status
-				await Promise.all(this._createMultipleDocumentUpdateInvocations(
-					penaltyIds,
-					type,
-					PaymentAmount,
-					id,
-				));
+				await this._createMultipleDocumentUpdateInvocation(penaltyIds);
 				response = createResponse({ body: {} });
 				return callback(null, response);
 			}
 			// Otherwise just update the Payments object
 			await this.db.put(createPutUpdateParams(penaltyGroupPaymentRecord)).promise();
 			// Need to update the document(s) with the new payment status
-			await Promise.all(this._createMultipleDocumentUpdateInvocations(penaltyIds));
+			await this._createMultipleDocumentUpdateInvocation(penaltyIds);
 			response = createResponse({ body: penaltyGroupPaymentRecord });
 			return callback(null, response);
 		} catch (err) {
@@ -122,13 +118,17 @@ export default class GroupPayments {
 		}
 	}
 
-	_createMultipleDocumentUpdateInvocations(penaltyReferences, type, amount, paymentCode) {
-		return penaltyReferences.map((ref) => {
-			return lambda.invoke({
-				FunctionName: this.documentUpdateArn,
-				Payload: `{"body": { "id": "${ref}", "paymentStatus": "UNPAID", "paymentAmount": "${amount}","penaltyRefNo": "${ref.split('_')[0]}", "penaltyType":"${type}", "paymentToken":"${paymentCode}" } }`,
-			}).promise();
-		});
+	_createMultipleDocumentUpdateInvocation(penaltyReferences) {
+		const payload = {
+			body: {
+				penaltyDocumentIds: penaltyReferences,
+			},
+		};
+
+		return lambda.invoke({
+			FunctionName: this.documentUpdateArn,
+			Payload: JSON.stringify(payload),
+		}).promise();
 	}
 
 	async _createIndividualPaymentRecords(penaltyIds, paymentDetail, paymentCode) {
