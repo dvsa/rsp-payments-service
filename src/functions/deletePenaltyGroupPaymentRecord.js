@@ -5,6 +5,7 @@ const groupPayments = new GroupPayments(
 	doc,
 	process.env.DYNAMODB_GROUP_PAYMENTS_TABLE,
 	process.env.PENALTYGROUP_UPDATE_ARN,
+	process.env.PENALTY_DOCS_UPDATE_ARN,
 	process.env.DOCUMENTUPDATE_ARN,
 );
 
