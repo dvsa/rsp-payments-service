@@ -5,10 +5,14 @@ import isEmptyObject from '../utils/isEmptyObject';
 
 const lambda = new Lambda({ region: 'eu-west-1' });
 export default class GroupPayments {
-	constructor(db, tableName, updateMultiplePenaltyDocumentsArn, documentUpdateArn) {
+	constructor(
+		db, tableName, updatePenaltyGroupPaymentRecordArn, updateMultiplePenaltyDocumentsArn,
+		documentUpdateArn,
+	) {
 		this.db = db;
 		this.tableName = tableName;
 		this.updateMultiplePenaltyDocumentsArn = updateMultiplePenaltyDocumentsArn;
+		this.updatePenaltyGroupPaymentRecordArn = updatePenaltyGroupPaymentRecordArn;
 		this.documentUpdateArn = documentUpdateArn;
 	}
 
@@ -126,7 +130,7 @@ export default class GroupPayments {
 		};
 
 		return lambda.invoke({
-			FunctionName: this.documentUpdateArn,
+			FunctionName: this.updateMultiplePenaltyDocumentsArn,
 			Payload: JSON.stringify(payload),
 		}).promise();
 	}
@@ -201,7 +205,7 @@ export default class GroupPayments {
 	async _applyPaymentToPenaltyGroup(id, paymentStatus, penaltyType) {
 		console.log(`Invoke updatePenaltyGroupPaymentRecord, args: ${id}, ${paymentStatus}, ${penaltyType}`);
 		return lambda.invoke({
-			FunctionName: this.updateMultiplePenaltyDocumentsArn,
+			FunctionName: this.updatePenaltyGroupPaymentRecordArn,
 			Payload: `{"body": { "id": "${id}", "paymentStatus": "${paymentStatus}", "penaltyType": "${penaltyType}" } }`,
 		}).promise();
 	}
