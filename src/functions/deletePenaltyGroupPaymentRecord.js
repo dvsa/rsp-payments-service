@@ -10,7 +10,6 @@ const groupPayments = new GroupPayments(
 );
 
 export default (event, context, callback) => {
-	const { id, type } = event.pathParameters;
-	groupPayments.deletePenaltyGroupPaymentRecord(id, type, callback);
-
+	const { id, penaltyType } = event.pathParameters;
+	groupPayments.deletePenaltyGroupPaymentRecord(id, penaltyType, callback);
 };
