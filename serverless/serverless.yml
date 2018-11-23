@@ -392,6 +392,7 @@ resources:
                 - dynamodb:GetItem
                 - dynamodb:PutItem
                 - dynamodb:BatchGetItem 
+                - dynamodb:BatchWriteItem
                 - dynamodb:UpdateItem
                 - dynamodb:DeleteItem
               Resource: arn:aws:dynamodb:*:*:table/paymentsTable
