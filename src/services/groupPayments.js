@@ -96,6 +96,7 @@ export default class GroupPayments {
 			const penaltyGroupPaymentRecord = await this.getPenaltyGroupPaymentRecord(id);
 			const { PaymentAmount, penaltyIds } = penaltyGroupPaymentRecord.Payments[type];
 			console.log(`PaymentAmount, penaltyIds: ${PaymentAmount}, ${penaltyIds}`);
+
 			delete penaltyGroupPaymentRecord.Payments[type];
 			// Delete the entire item if there are no other payments
 			if (isEmptyObject(penaltyGroupPaymentRecord.Payments)) {
@@ -103,14 +104,14 @@ export default class GroupPayments {
 				// Need to update the document with the new payment status
 				await this._createMultipleDocumentUpdateInvocation(penaltyIds);
 				response = createResponse({ body: {} });
-				return callback(null, response);
+				return callback(null, response, penaltyIds);
 			}
 			// Otherwise just update the Payments object
 			await this.db.put(createPutUpdateParams(penaltyGroupPaymentRecord)).promise();
 			// Need to update the document(s) with the new payment status
 			await this._createMultipleDocumentUpdateInvocation(penaltyIds);
 			response = createResponse({ body: penaltyGroupPaymentRecord });
-			return callback(null, response);
+			return callback(null, response, penaltyIds);
 		} catch (err) {
 			console.log('error deleting penalty group payment record');
 			console.log(err);
