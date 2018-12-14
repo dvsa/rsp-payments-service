@@ -236,6 +236,21 @@ export default class Payments {
 
 	}
 
+	deletePaymentOnly(id, callback) {
+		const params = {
+			TableName: this.tableName,
+			Key: { ID: id },
+		};
+
+		this.db.delete(params, (err) => {
+			if (err) {
+				callback(err);
+			} else {
+				callback();
+			}
+		});
+	}
+
 	delete(id, callback) {
 		let error;
 		let response;

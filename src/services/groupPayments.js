@@ -1,12 +1,17 @@
+// @ts-check
 import { Lambda } from 'aws-sdk';
 import createResponse from '../utils/createResponse';
 import isEmptyObject from '../utils/isEmptyObject';
 
 const lambda = new Lambda({ region: 'eu-west-1' });
 export default class GroupPayments {
-	constructor(db, tableName, updatePenaltyGroupPaymentRecordArn, documentUpdateArn) {
+	constructor(
+		db, tableName, updatePenaltyGroupPaymentRecordArn, updateMultiplePenaltyDocumentsArn,
+		documentUpdateArn,
+	) {
 		this.db = db;
 		this.tableName = tableName;
+		this.updateMultiplePenaltyDocumentsArn = updateMultiplePenaltyDocumentsArn;
 		this.updatePenaltyGroupPaymentRecordArn = updatePenaltyGroupPaymentRecordArn;
 		this.documentUpdateArn = documentUpdateArn;
 	}
@@ -54,7 +59,7 @@ export default class GroupPayments {
 			if (err.statusCode) {
 				return callback(null, err);
 			}
-			return callback(null, createResponse(null, { statusCode: 500 }));
+			return callback(null, createResponse({ statusCode: 500 }));
 		}
 	}
 
@@ -91,26 +96,22 @@ export default class GroupPayments {
 			const penaltyGroupPaymentRecord = await this.getPenaltyGroupPaymentRecord(id);
 			const { PaymentAmount, penaltyIds } = penaltyGroupPaymentRecord.Payments[type];
 			console.log(`PaymentAmount, penaltyIds: ${PaymentAmount}, ${penaltyIds}`);
+
 			delete penaltyGroupPaymentRecord.Payments[type];
 			// Delete the entire item if there are no other payments
 			if (isEmptyObject(penaltyGroupPaymentRecord.Payments)) {
 				await this.db.delete(createDeleteParams(id)).promise();
 				// Need to update the document with the new payment status
-				await Promise.all(this._createMultipleDocumentUpdateInvocations(
-					penaltyIds,
-					type,
-					PaymentAmount,
-					id,
-				));
+				await this._createMultipleDocumentUpdateInvocation(penaltyIds);
 				response = createResponse({ body: {} });
-				return callback(null, response);
+				return callback(null, response, penaltyIds);
 			}
 			// Otherwise just update the Payments object
 			await this.db.put(createPutUpdateParams(penaltyGroupPaymentRecord)).promise();
 			// Need to update the document(s) with the new payment status
-			await Promise.all(this._createMultipleDocumentUpdateInvocations(penaltyIds));
+			await this._createMultipleDocumentUpdateInvocation(penaltyIds);
 			response = createResponse({ body: penaltyGroupPaymentRecord });
-			return callback(null, response);
+			return callback(null, response, penaltyIds);
 		} catch (err) {
 			console.log('error deleting penalty group payment record');
 			console.log(err);
@@ -122,13 +123,17 @@ export default class GroupPayments {
 		}
 	}
 
-	_createMultipleDocumentUpdateInvocations(penaltyReferences, type, amount, paymentCode) {
-		return penaltyReferences.map((ref) => {
-			return lambda.invoke({
-				FunctionName: this.documentUpdateArn,
-				Payload: `{"body": { "id": "${ref}", "paymentStatus": "UNPAID", "paymentAmount": "${amount}","penaltyRefNo": "${ref.split('_')[0]}", "penaltyType":"${type}", "paymentToken":"${paymentCode}" } }`,
-			}).promise();
-		});
+	_createMultipleDocumentUpdateInvocation(penaltyReferences) {
+		const payload = {
+			body: {
+				penaltyDocumentIds: penaltyReferences,
+			},
+		};
+
+		return lambda.invoke({
+			FunctionName: this.updateMultiplePenaltyDocumentsArn,
+			Payload: JSON.stringify(payload),
+		}).promise();
 	}
 
 	async _createIndividualPaymentRecords(penaltyIds, paymentDetail, paymentCode) {

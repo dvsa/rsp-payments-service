@@ -163,6 +163,41 @@ functions:
                   description: "500 server error"
                 responseModels:
                   application/json: "ErrorResponse"
+  deletePenaltyGroupPaymentRecord:
+    handler: handler.deletePenaltyGroupPaymentRecord
+    memorySize: 128
+    events:
+      -
+        http:
+          path: groupPayments/{id}/{penaltyType}
+          method: delete
+          authorizer: aws_iam
+          cors: true
+          documentation:
+            summary: "Delete payment details for a penalty group"
+            description: "Updates a penalty group and child documents to reflect payment deletion"
+            pathParmas:
+              - name: "id"
+                description: "The penalty-group-payment id"
+                schema:
+                  type: "string"
+                  pattern: "^[0-9]+$"
+              - name: "penaltyType"
+                description: "The penalty type of the payments to delete within a group"
+                schema:
+                  type: "string"
+                  pattern: "^[0-9]+$"
+          methodResponses:
+            - statusCode: 200
+              responseBody:
+                description: "Details of the updated payment group"
+              responseModels:
+                application/json: "PaymentsResponse"
+            - statusCode: 501
+              responseBody:
+                descriptions: "501 not implemented"
+              responseModels:
+                application/json: "ErrorResponse"
   create:
     handler: handler.create
     memorySize: 128
@@ -357,6 +392,7 @@ resources:
                 - dynamodb:GetItem
                 - dynamodb:PutItem
                 - dynamodb:BatchGetItem 
+                - dynamodb:BatchWriteItem
                 - dynamodb:UpdateItem
                 - dynamodb:DeleteItem
               Resource: arn:aws:dynamodb:*:*:table/paymentsTable
