@@ -7066,9 +7066,9 @@
       }
     },
     "rsp-validation": {
-      "version": "1.5.4",
-      "resolved": "https://registry.npmjs.org/rsp-validation/-/rsp-validation-1.5.4.tgz",
-      "integrity": "sha512-HNYdBmq7OEwYGbV2yuK03JZZtxmrRm5TzSnDjSTC+jiy+svbVKo3XXmYExsts5Qnb9ZCL0A+HXb9bDsgShkShQ==",
+      "version": "1.5.16",
+      "resolved": "https://registry.npmjs.org/rsp-validation/-/rsp-validation-1.5.16.tgz",
+      "integrity": "sha512-4w3sADVnttdGvpZv5668r77pXQj8P5VzfDD8pc/j9gaZL1bwRfqPCIg4Gxgp2aQBqRZ6FaRCQl6hbIMztP9NHw==",
       "requires": {
         "joi": "^13.1.2"
       }
