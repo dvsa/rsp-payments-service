@@ -251,9 +251,8 @@ export default class Payments {
 		});
 	}
 
-	delete(id, callback) {
+	async delete(id) {
 		let error;
-		let response;
 
 		const params = {
 			TableName: this.tableName,
@@ -261,42 +260,45 @@ export default class Payments {
 			ReturnValues: 'ALL_OLD',
 		};
 
-		this.db.delete(params, (err, data) => {
-			if (err) {
-				error = createResponse({
-					body: 'Couldn\'t remove the payment.',
-					statusCode: err.statusCode || 501,
-				});
-				callback(error);
-			}
-			const deletedData = data.Attributes;
-			const paymentInfo = {
-				PenaltyStatus: deletedData.PenaltyStatus,
-				PenaltyType: deletedData.PenaltyType,
-				PenaltyReference: deletedData.PenaltyReference,
-				PaymentDetail: deletedData.PaymentDetail,
-			};
-
-			response = createResponse({
-				body: {},
+		let data;
+		try {
+			data = await this.db.delete(params).promise();
+		} catch (err) {
+			error = createResponse({
+				body: "Couldn't remove the payment.",
+				statusCode: err.statusCode || 501,
 			});
+			return error;
+		}
 
-			if (paymentInfo.PenaltyStatus === 'PAID') {
-				lambda.invoke({
-					FunctionName: this.documentDeleteArn,
-					Payload: `{"body": { "id": "${id}", "paymentStatus": "UNPAID", "paymentAmount": "${paymentInfo.PaymentDetail.PaymentAmount}","penaltyRefNo": "${paymentInfo.PenaltyReference}", "penaltyType":"${paymentInfo.PenaltyType}", "paymentToken":"${paymentInfo.PaymentCode}" } }`,
-				}, (lambdaError, externalData) => {
-					if (lambdaError) {
-						callback(null, createResponse({ statusCode: 400, error: lambdaError }));
-					} else if (externalData.Payload) {
-						callback(null, response);
-					}
-				});
-			} else {
-				callback(null, response);
-			}
+		const deletedData = data.Attributes;
+		const paymentInfo = {
+			PenaltyStatus: deletedData.PenaltyStatus,
+			PenaltyType: deletedData.PenaltyType,
+			PenaltyReference: deletedData.PenaltyReference,
+			PaymentDetail: deletedData.PaymentDetail,
+		};
+
+		const response = createResponse({
+			body: {},
 		});
 
+		if (paymentInfo.PenaltyStatus === 'PAID') {
+			try {
+				const externalData = await lambda.invoke({
+					FunctionName: this.documentDeleteArn,
+					Payload: `{"body": { "id": "${id}", "paymentStatus": "UNPAID", "paymentAmount": "${paymentInfo.PaymentDetail.PaymentAmount}","penaltyRefNo": "${paymentInfo.PenaltyReference}", "penaltyType":"${paymentInfo.PenaltyType}", "paymentToken":"${paymentInfo.PaymentCode}" } }`,
+				}).promise();
+
+				if (externalData.Payload) {
+					return response;
+				}
+				return createResponse({ statusCode: 400 });
+			} catch (lambdaError) {
+				return createResponse({ statusCode: 400, error: lambdaError });
+			}
+		}
+		return response;
 	}
 
 	update(id, body, callback) {

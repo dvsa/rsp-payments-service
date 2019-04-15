@@ -28,6 +28,9 @@ custom:
         description: This is a Payments response
         contentType: application/json
         schema: ${file(models/PaymentsResponse.json)}
+      - name: DeleteRequest
+        description: Delete a payment for a single penalty
+        schema: ${file(models/DeleteRequest.json)}
     version: '1'
     title: 'RSP Payments API'
     description: 'RSP Payments api'
@@ -300,11 +303,11 @@ functions:
                 description: "The id of the payment to delete"
                 schema:
                   type: "string"
-                  pattern: "^[0-9]+$"
+                  pattern: "^[0-9_A-Z]+$"
             requestBody:
               description: "Details of deleted payment"
             requestModels:
-              application/json: "PaymentRequest"
+              application/json: "DeleteRequest"
             methodResponses:
               - statusCode: 200
                 responseBody:
