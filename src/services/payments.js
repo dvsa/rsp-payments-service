@@ -148,10 +148,7 @@ export default class Payments {
 		return '';
 	}
 
-	create(body, callback) {
-		let error;
-		let response;
-
+	async create(body) {
 		const constructedID = `${body.PenaltyReference}_${body.PenaltyType}`;
 		const params = {
 			TableName: this.tableName,
@@ -171,16 +168,7 @@ export default class Payments {
 		// body.PaymentDetail.paymentCode
 		const checkTest = Validation.paymentValidation(bodyToValidate);
 
-		if (constructedID === '') {
-			const err = 'Invalid Id';
-			const errorToReturn = createResponse({
-				body: {
-					err,
-				},
-				statusCode: 405,
-			});
-			callback(null, errorToReturn);
-		} else if (!checkTest.valid) {
+		if (!checkTest.valid) {
 			const err = checkTest.error.message;
 			const validationError = createResponse({
 				body: {
@@ -188,42 +176,35 @@ export default class Payments {
 				},
 				statusCode: 405,
 			});
-			callback(null, validationError);
-		} else {
+			return validationError;
+		}
 
-			this.db.put(params, (err) => {
-				if (err) {
-					error = createResponse({
-						body: {
-							err,
-						},
-						statusCode: 500,
-					});
-					callback(null, error);
-				}
-
-				response = createResponse({
-					body: {
-						payment: params.Item,
-					},
-				});
-
-				const payItem = params.Item;
-
-				lambda.invoke({
-					FunctionName: this.documentUpdateArn,
-					Payload: `{"body": { "id": "${constructedID}", "paymentStatus": "${body.PenaltyStatus}", "paymentAmount": "${payItem.PaymentDetail.PaymentAmount}","penaltyRefNo": "${body.PenaltyReference}", "penaltyType":"${body.PenaltyType}", "paymentToken":"${body.PaymentCode}" } }`,
-				}, (lambdaError, data) => {
-					if (lambdaError) {
-						callback(null, createResponse({ statusCode: 400, error: lambdaError }));
-					} else if (data.Payload) {
-						callback(null, response);
-					}
-				});
-				callback(null, response);
+		try {
+			await this.db.put(params);
+		} catch (err) {
+			return createResponse({
+				body: {
+					err,
+				},
+				statusCode: 500,
 			});
 		}
 
+		const payItem = params.Item;
+
+		try {
+			await lambda.invoke({
+				FunctionName: this.documentUpdateArn,
+				Payload: `{"body": { "id": "${constructedID}", "paymentStatus": "${body.PenaltyStatus}", "paymentAmount": "${payItem.PaymentDetail.PaymentAmount}","penaltyRefNo": "${body.PenaltyReference}", "penaltyType":"${body.PenaltyType}", "paymentToken":"${body.PaymentCode}" } }`,
+			}).promise();
+			return createResponse({
+				body: {
+					payment: payItem,
+				},
+			});
+		} catch (lambdaError) {
+			return createResponse({ statusCode: 400, error: lambdaError });
+		}
 	}
 
 	deletePaymentOnly(id) {

@@ -9,10 +9,8 @@ const payments = new Payments(
 	process.env.DOCUMENTDELETE_ARN,
 );
 
-export default (event, context, callback) => {
-
+export default (event) => {
 	const data = JSON.parse(event.body);
 
-	payments.create(data, callback);
-
+	return payments.create(data);
 };
