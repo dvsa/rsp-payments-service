@@ -72,9 +72,6 @@ export default class Payments {
 	}
 
 	async get(id) {
-		let error;
-		let response;
-
 		const params = {
 			TableName: this.tableName,
 			Key: { ID: id },
@@ -83,20 +80,18 @@ export default class Payments {
 		try {
 			const data = await this.db.get(params).promise();
 			const payment = data.Item;
-			response = createResponse({
+			return createResponse({
 				body: {
 					payment,
 				},
 			});
-			return response;
 		} catch (err) {
-			error = createResponse({
+			return createResponse({
 				body: {
 					err,
 				},
 				statusCode: 500,
 			});
-			return error;
 		}
 	}
 
