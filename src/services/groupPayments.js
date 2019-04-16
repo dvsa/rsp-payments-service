@@ -72,7 +72,7 @@ export default class GroupPayments {
 		return resp.Item || {};
 	}
 
-	async deletePenaltyGroupPaymentRecord(id, type, callback) {
+	async deletePenaltyGroupPaymentRecord(id, type) {
 		let error;
 		let response;
 		console.log(`id, type: ${id}, ${type}`);
@@ -104,14 +104,14 @@ export default class GroupPayments {
 				// Need to update the document with the new payment status
 				await this._createMultipleDocumentUpdateInvocation(penaltyIds);
 				response = createResponse({ body: {} });
-				return callback(null, response, penaltyIds);
+				return { response, penaltyIds };
 			}
 			// Otherwise just update the Payments object
 			await this.db.put(createPutUpdateParams(penaltyGroupPaymentRecord)).promise();
 			// Need to update the document(s) with the new payment status
 			await this._createMultipleDocumentUpdateInvocation(penaltyIds);
 			response = createResponse({ body: penaltyGroupPaymentRecord });
-			return callback(null, response, penaltyIds);
+			return { response, penaltyIds };
 		} catch (err) {
 			console.log('error deleting penalty group payment record');
 			console.log(err);
@@ -119,7 +119,7 @@ export default class GroupPayments {
 				body: `Couldn't remove the payment of type: ${type}, for code ${id}`,
 				statusCode: err.statusCode || 501,
 			});
-			return callback(error);
+			return { response: error };
 		}
 	}
 
