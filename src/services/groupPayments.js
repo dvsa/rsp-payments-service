@@ -16,10 +16,10 @@ export default class GroupPayments {
 		this.documentUpdateArn = documentUpdateArn;
 	}
 
-	async createPenaltyGroupPaymentRecord(body, callback) {
+	async createPenaltyGroupPaymentRecord(body) {
 		const validationResponse = GroupPayments.tryGenerateValidationErrorResponse(body);
 		if (validationResponse) {
-			return callback(null, validationResponse);
+			return validationResponse;
 		}
 
 		const {
@@ -53,13 +53,13 @@ export default class GroupPayments {
 				this._createIndividualPaymentRecords(PenaltyIds, PaymentDetail, PaymentCode),
 			]);
 
-			return callback(null, resp);
+			return resp;
 		} catch (err) {
 			console.log(err);
 			if (err.statusCode) {
-				return callback(null, err);
+				return err;
 			}
-			return callback(null, createResponse({ statusCode: 500 }));
+			return createResponse({ statusCode: 500 });
 		}
 	}
 

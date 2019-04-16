@@ -27,7 +27,7 @@ describe('penaltyGroups', () => {
 					.set('Content-Type', 'application/json')
 					.set('Authorization', 'allow')
 					.expect(200)
-					.expect('Content-Type', 'application/json');
+					.expect('Content-Type', 'application/json; charset=utf-8');
 
 				expect(resp.body.ID).toEqual(groupId);
 				expect(resp.body.Payments.FPN.PaymentRef).toBe('REF12345');
@@ -49,7 +49,7 @@ describe('penaltyGroups', () => {
 					.set('Content-Type', 'application/json')
 					.set('Authorization', 'allow')
 					.expect(404)
-					.expect('Content-Type', 'application/json')
+					.expect('Content-Type', 'application/json; charset=utf-8')
 					.end((err) => {
 						if (err) throw err;
 						done();
@@ -82,13 +82,14 @@ describe('penaltyGroups', () => {
 					.set('Authorization', 'allow')
 					.send(fakePenaltyGroupPaymentRecordPayload)
 					.expect(201)
-					.expect('Content-Type', 'application/json');
+					.expect('Content-Type', 'application/json; charset=utf-8');
 
 				expect(response.body.ID).toBe('12212');
 				expect(response.body.Payments.FPN)
 					.toEqual({
 						...fakePenaltyGroupPaymentRecordPayload.PaymentDetail,
 						PaymentStatus: 'PAID',
+						penaltyIds: fakePenaltyGroupPaymentRecordPayload.PenaltyIds,
 					});
 
 				const singlePenaltyPayments = await getPaymentRecords(['111111111111_FPN', '222222222222_FPN']);
@@ -142,7 +143,7 @@ describe('penaltyGroups', () => {
 					.set('Authorization', 'allow')
 					.send(fakePenaltyGroupPaymentRecordPayload)
 					.expect(200)
-					.expect('Content-Type', 'application/json');
+					.expect('Content-Type', 'application/json; charset=utf-8');
 
 				expect(response.body)
 					.toEqual({
@@ -220,7 +221,7 @@ describe('penaltyGroups', () => {
 					.set('Authorization', 'allow')
 					.send(fakePenaltyGroupPaymentRecordPayload)
 					.expect(400)
-					.expect('Content-Type', 'application/json')
+					.expect('Content-Type', 'application/json; charset=utf-8')
 					.end((err, res) => {
 						if (err) throw err;
 						expect(res.body.err).toBe('Invalid penalty type INVALID, must be either FPN, IM or CDN');

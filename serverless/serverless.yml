@@ -54,6 +54,7 @@ plugins:
   - serverless-dynamodb-local
   - serverless-offline
   - serverless-openapi-documentation
+  - serverless-dotenv-plugin
 provider:
   name: aws
   runtime: nodejs8.10
@@ -244,8 +245,6 @@ functions:
             description: "Creates a new payment"
             requestBody:
               description: "Details of payment"
-            requestModels:
-              application/json: "PaymentRequest"
             methodResponses:
               - statusCode: 200
                 responseBody:
