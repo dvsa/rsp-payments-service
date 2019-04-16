@@ -179,10 +179,11 @@ export default class Payments {
 
 		const payItem = params.Item;
 
+		const payload = `{"body": { "id": "${constructedID}", "paymentStatus": "${body.PenaltyStatus}", "paymentAmount": "${payItem.PaymentDetail.PaymentAmount}","penaltyRefNo": "${body.PenaltyReference}", "penaltyType":"${body.PenaltyType}", "paymentToken":"${body.PaymentCode}" } }`;
 		try {
 			await lambda.invoke({
 				FunctionName: this.documentUpdateArn,
-				Payload: `{"body": { "id": "${constructedID}", "paymentStatus": "${body.PenaltyStatus}", "paymentAmount": "${payItem.PaymentDetail.PaymentAmount}","penaltyRefNo": "${body.PenaltyReference}", "penaltyType":"${body.PenaltyType}", "paymentToken":"${body.PaymentCode}" } }`,
+				Payload: payload,
 			}).promise();
 			return createResponse({
 				body: {
@@ -190,6 +191,8 @@ export default class Payments {
 				},
 			});
 		} catch (lambdaError) {
+			console.error(lambdaError);
+			console.error(`Payload: ${payload}`);
 			return createResponse({ statusCode: 400, error: lambdaError });
 		}
 	}
