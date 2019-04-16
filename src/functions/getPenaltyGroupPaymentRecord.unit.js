@@ -6,7 +6,6 @@ import getPenaltyGroupPaymentRecord from './getPenaltyGroupPaymentRecord';
 import groupPayments from '../../mock-data/fake-group-payments.json';
 
 describe('get', () => {
-
 	let event;
 	let payment;
 
@@ -15,7 +14,6 @@ describe('get', () => {
 	});
 
 	describe('when a specific payment is requested', () => {
-
 		beforeEach(() => {
 			event = {
 				httpMethod: 'GET',
@@ -27,17 +25,10 @@ describe('get', () => {
 			sinon.stub(GroupPayments.prototype, 'getPenaltyGroupPaymentRecord').resolves(payment);
 		});
 
-		it('should return a 200 success with the correct payment', (done) => {
-
-			getPenaltyGroupPaymentRecord(event, null, (err, res) => {
-				expect(err).toBe(null);
-				expect(res.statusCode).toBe(200);
-				expect(JSON.parse(res.body)).toEqual(payment);
-				done();
-			});
-
+		it('should return a 200 success with the correct payment', async () => {
+			const res = await getPenaltyGroupPaymentRecord(event);
+			expect(res.statusCode).toBe(200);
+			expect(JSON.parse(res.body)).toEqual(payment);
 		});
-
 	});
-
 });

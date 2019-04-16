@@ -11,18 +11,17 @@ const payments = new GroupPayments(
 	process.env.DOCUMENTUPDATE_ARN,
 );
 
-export default async (event, context, callback) => {
+export default async (event) => {
 	try {
 		const record = await payments.getPenaltyGroupPaymentRecord(event.pathParameters.id);
 		if (isEmptyObject(record)) {
 			throw createResponse({ statusCode: 404 });
 		}
-		callback(null, createResponse({ statusCode: 200, body: record }));
+		return createResponse({ statusCode: 200, body: record });
 	} catch (err) {
 		if (err.statusCode) {
-			callback(null, err);
-		} else {
-			callback(null, createResponse({ statusCode: 500, body: err }));
+			return err;
 		}
+		return createResponse({ statusCode: 500, body: err });
 	}
 };
