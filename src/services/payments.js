@@ -15,9 +15,7 @@ export default class Payments {
 		this.documentDeleteArn = documentDeleteArn;
 	}
 
-	batchFetch(idList, callback) {
-		let response;
-		let error;
+	async batchFetch(idList) {
 		const keys = [];
 		idList.forEach((element) => {
 			keys.push({ ID: element });
@@ -32,30 +30,22 @@ export default class Payments {
 			},
 		};
 
-		this.db.batchGet(params, onBatch);
+		try {
+			const data = this.db.batchGet(params).promise();
+			const payments = data.Responses[process.env.DYNAMODB_PAYMENTS_TABLE];
 
-		function onBatch(err, data) {
-			if (err) {
-				console.log(err);
-				error = createResponse({
-					body: {
-						err,
-					},
-					statusCode: 500,
-				});
-				callback(error);
-			} else {
-				const payments = data.Responses[process.env.DYNAMODB_PAYMENTS_TABLE];
-
-				response = createResponse({
-					body: {
-						payments,
-					},
-				});
-				callback(null, response);
-			}
+			return createResponse({
+				body: {
+					payments,
+				},
+			});
+		} catch (err) {
+			console.log(err);
+			return createResponse({
+				body: { err },
+				statusCode: 500,
+			});
 		}
-
 	}
 
 	list(callback) {
