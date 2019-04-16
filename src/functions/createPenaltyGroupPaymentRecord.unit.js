@@ -22,25 +22,22 @@ describe('createPenaltyGroupPaymentRecord', () => {
 			body: '{"PaymentCode":"12212","PenaltyType":"FPN","PaymentDetail":{"PaymentMethod":"CARD","PaymentRef":"receipt_reference","AuthCode":"auth_code","PaymentAmount":120,"PaymentDate":1533200397}}',
 		};
 		payment = groupPayments.filter(item => item.ID === '15xk9i0xujgg');
-		createPenaltyGroupPaymentRecordStub = sinon.stub(GroupPayments.prototype, 'createPenaltyGroupPaymentRecord').callsFake((id, callback) => {
+		createPenaltyGroupPaymentRecordStub = sinon.stub(GroupPayments.prototype, 'createPenaltyGroupPaymentRecord').callsFake((id) => {
 			const response = createResponse({
 				body: payment,
 			});
-			callback(null, response);
+			return Promise.resolve(response);
 		});
 	});
 
 	describe('when a specific payment is requested', () => {
 
-		it('should return a 200 success with the correct payment', (done) => {
+		it('should return a 200 success with the correct payment', async () => {
+			const res = await createPenaltyGroupPaymentRecord(event);
 
-			createPenaltyGroupPaymentRecord(event, null, (err, res) => {
-				expect(err).toBe(null);
-				expect(res.statusCode).toBe(200);
-				expect(createPenaltyGroupPaymentRecordStub.called).toBe(true);
-				expect(JSON.parse(res.body)).toEqual(payment);
-				done();
-			});
+			expect(res.statusCode).toBe(200);
+			expect(createPenaltyGroupPaymentRecordStub.called).toBe(true);
+			expect(JSON.parse(res.body)).toEqual(payment);
 		});
 
 	});
