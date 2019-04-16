@@ -253,10 +253,7 @@ export default class Payments {
 		return response;
 	}
 
-	update(id, body, callback) {
-
-		let error;
-		let response;
+	update(id, body) {
 		const params = {
 			TableName: this.tableName,
 			Key: { ID: id },
@@ -285,27 +282,23 @@ export default class Payments {
 				},
 				statusCode: 405,
 			});
-			callback(null, validationError);
-		} else {
-			this.db.update(params, (err, result) => {
-				if (err) {
-					error = createResponse({
-						body: {
-							err: 'Failed to update payment',
-						},
-						statusCode: 500,
-					});
-					callback(null, error);
-				} else {
-					response = createResponse({
-						statusCode: 200,
-						body: result.Attributes,
-					});
-					callback(null, response);
-				}
-			});
+			return validationError;
 		}
 
+		try {
+			const result = this.db.update(params).promise();
+			return createResponse({
+				statusCode: 200,
+				body: result.Attributes,
+			});
+		} catch (err) {
+			return createResponse({
+				body: {
+					err: 'Failed to update payment',
+				},
+				statusCode: 500,
+			});
+		}
 	}
 }
 
