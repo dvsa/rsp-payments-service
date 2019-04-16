@@ -168,7 +168,7 @@ export default class Payments {
 		}
 
 		try {
-			await this.db.put(params);
+			await this.db.put(params).promise();
 		} catch (err) {
 			console.error(err);
 			return createResponse({
