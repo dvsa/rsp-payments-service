@@ -71,7 +71,7 @@ export default class Payments {
 
 	}
 
-	get(id, callback) {
+	async get(id) {
 		let error;
 		let response;
 
@@ -80,27 +80,24 @@ export default class Payments {
 			Key: { ID: id },
 		};
 
-		this.db.get(params, (err, data) => {
-
-			if (err) {
-				error = createResponse({
-					body: {
-						err,
-					},
-					statusCode: 500,
-				});
-				callback(error);
-			} else {
-				const payment = data.Item;
-				response = createResponse({
-					body: {
-						payment,
-					},
-				});
-				callback(null, response);
-			}
-		});
-
+		try {
+			const data = await this.db.get(params).promise();
+			const payment = data.Item;
+			response = createResponse({
+				body: {
+					payment,
+				},
+			});
+			return response;
+		} catch (err) {
+			error = createResponse({
+				body: {
+					err,
+				},
+				statusCode: 500,
+			});
+			return error;
+		}
 	}
 
 	constructID(penaltyReference, penaltyType) {
