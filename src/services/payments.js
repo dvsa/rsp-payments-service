@@ -31,7 +31,7 @@ export default class Payments {
 		};
 
 		try {
-			const data = this.db.batchGet(params).promise();
+			const data = await this.db.batchGet(params).promise();
 			const payments = data.Responses[process.env.DYNAMODB_PAYMENTS_TABLE];
 
 			return createResponse({
