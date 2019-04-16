@@ -48,35 +48,25 @@ export default class Payments {
 		}
 	}
 
-	list(callback) {
-		let response;
-		let error;
-
+	async list() {
 		const params = {
 			TableName: this.tableName,
 		};
 
-		this.db.scan(params, onScan);
-
-		function onScan(err, data) {
-			if (err) {
-				error = createResponse({
-					body: {
-						err,
-					},
-					statusCode: 500,
-				});
-				callback(error);
-			} else {
-				const payments = data.Items;
-
-				response = createResponse({
-					body: {
-						payments,
-					},
-				});
-				callback(null, response);
-			}
+		try {
+			const data = await this.db.scan(params).promise();
+			return createResponse({
+				body: {
+					payments: data.Items,
+				},
+			});
+		} catch (err) {
+			return createResponse({
+				body: {
+					err,
+				},
+				statusCode: 500,
+			});
 		}
 
 	}

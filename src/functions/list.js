@@ -9,8 +9,6 @@ const payments = new Payments(
 	process.env.DOCUMENTDELETE_ARN,
 );
 
-export default (event, context, callback) => {
-
-	payments.list(callback);
-
+export default () => {
+	return payments.list();
 };
