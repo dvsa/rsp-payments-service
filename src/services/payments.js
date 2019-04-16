@@ -163,12 +163,14 @@ export default class Payments {
 				},
 				statusCode: 405,
 			});
+			console.error(err);
 			return validationError;
 		}
 
 		try {
 			await this.db.put(params);
 		} catch (err) {
+			console.error(err);
 			return createResponse({
 				body: {
 					err,
