@@ -40,7 +40,6 @@
   "devDependencies": {
     "@babel/cli": "^7.2.3",
     "@babel/core": "^7.4.0",
-    "@babel/plugin-proposal-object-rest-spread": "^7.4.0",
     "@babel/preset-env": "^7.4.2",
     "@babel/register": "^7.4.0",
     "copyfiles": "^1.2.0",
@@ -53,7 +52,7 @@
     "npm-run-all": "^4.1.1",
     "replace": "^1.1.0",
     "rimraf": "^2.6.2",
-    "serverless": "^1.39.1",
+    "serverless": "^1.41.1",
     "serverless-dotenv-plugin": "^2.0.1",
     "serverless-dynamodb-local": "^0.2.37",
     "serverless-offline": "^3.31.3",

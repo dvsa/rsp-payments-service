@@ -10,8 +10,5 @@
 		  "corejs": "2",
 		},
 	  ],
-	],
-	"plugins": [
-	  "@babel/plugin-proposal-object-rest-spread",
 	]
 }
