@@ -7,7 +7,6 @@ import createResponse from '../utils/createResponse';
 import payments from '../../mock-data/fake-payments.json';
 
 describe('get', () => {
-
 	let event;
 	let payment;
 
@@ -16,7 +15,6 @@ describe('get', () => {
 	});
 
 	describe('when a specific payment is requested', () => {
-
 		beforeEach(() => {
 			event = {
 				httpMethod: 'GET',
@@ -25,25 +23,18 @@ describe('get', () => {
 				},
 			};
 			payment = payments.filter(item => item.id === '1');
-			sinon.stub(Payments.prototype, 'get').callsFake((id, callback) => {
+			sinon.stub(Payments.prototype, 'get').callsFake(() => {
 				const response = createResponse({
 					body: payment,
 				});
-				callback(null, response);
+				return Promise.resolve(response);
 			});
 		});
 
-		it('should return a 200 success with the correct payment', (done) => {
-
-			get(event, null, (err, res) => {
-				expect(err).toBe(null);
-				expect(res.statusCode).toBe(200);
-				expect(JSON.parse(res.body)).toEqual(payment);
-				done();
-			});
-
+		it('should return a 200 success with the correct payment', async () => {
+			const res = await get(event);
+			expect(res.statusCode).toBe(200);
+			expect(JSON.parse(res.body)).toEqual(payment);
 		});
-
 	});
-
 });

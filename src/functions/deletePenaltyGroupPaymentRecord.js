@@ -19,24 +19,25 @@ const payments = new Payments(
 );
 
 function deletePayments(penaltyIds) {
-	penaltyIds.forEach((penaltyId) => {
-		payments.deletePaymentOnly(penaltyId, (paymentDeleteErr) => {
+	const deletePromises = penaltyIds.map(penaltyId =>
+		payments.deletePaymentOnly(penaltyId).catch((err) => {
 			console.log('Encountered error when deleting payment for group payment.');
-			console.log(paymentDeleteErr);
-		});
-	});
+			console.log(err);
+		}));
+
+	return Promise.all(deletePromises);
 }
 
-export default (event, context, callback) => {
+export default async (event) => {
 	const { id, penaltyType } = event.pathParameters;
-	groupPayments.deletePenaltyGroupPaymentRecord(
-		id,
-		penaltyType,
-		((err, httpResponse, penaltyIds) => {
-			if (!err && penaltyIds !== undefined) {
-				deletePayments(penaltyIds);
-			}
-			callback(httpResponse);
-		}),
-	);
+	const {
+		response,
+		penaltyIds,
+	} = await groupPayments.deletePenaltyGroupPaymentRecord(id, penaltyType);
+
+	if (penaltyIds !== undefined) {
+		await deletePayments(penaltyIds);
+	}
+
+	return response;
 };

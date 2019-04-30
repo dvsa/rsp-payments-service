@@ -16,10 +16,10 @@ export default class GroupPayments {
 		this.documentUpdateArn = documentUpdateArn;
 	}
 
-	async createPenaltyGroupPaymentRecord(body, callback) {
+	async createPenaltyGroupPaymentRecord(body) {
 		const validationResponse = GroupPayments.tryGenerateValidationErrorResponse(body);
 		if (validationResponse) {
-			return callback(null, validationResponse);
+			return validationResponse;
 		}
 
 		const {
@@ -53,13 +53,13 @@ export default class GroupPayments {
 				this._createIndividualPaymentRecords(PenaltyIds, PaymentDetail, PaymentCode),
 			]);
 
-			return callback(null, resp);
+			return resp;
 		} catch (err) {
 			console.log(err);
 			if (err.statusCode) {
-				return callback(null, err);
+				return err;
 			}
-			return callback(null, createResponse({ statusCode: 500 }));
+			return createResponse({ statusCode: 500 });
 		}
 	}
 
@@ -72,7 +72,7 @@ export default class GroupPayments {
 		return resp.Item || {};
 	}
 
-	async deletePenaltyGroupPaymentRecord(id, type, callback) {
+	async deletePenaltyGroupPaymentRecord(id, type) {
 		let error;
 		let response;
 		console.log(`id, type: ${id}, ${type}`);
@@ -104,14 +104,14 @@ export default class GroupPayments {
 				// Need to update the document with the new payment status
 				await this._createMultipleDocumentUpdateInvocation(penaltyIds);
 				response = createResponse({ body: {} });
-				return callback(null, response, penaltyIds);
+				return { response, penaltyIds };
 			}
 			// Otherwise just update the Payments object
 			await this.db.put(createPutUpdateParams(penaltyGroupPaymentRecord)).promise();
 			// Need to update the document(s) with the new payment status
 			await this._createMultipleDocumentUpdateInvocation(penaltyIds);
 			response = createResponse({ body: penaltyGroupPaymentRecord });
-			return callback(null, response, penaltyIds);
+			return { response, penaltyIds };
 		} catch (err) {
 			console.log('error deleting penalty group payment record');
 			console.log(err);
@@ -119,7 +119,7 @@ export default class GroupPayments {
 				body: `Couldn't remove the payment of type: ${type}, for code ${id}`,
 				statusCode: err.statusCode || 501,
 			});
-			return callback(error);
+			return { response: error };
 		}
 	}
 

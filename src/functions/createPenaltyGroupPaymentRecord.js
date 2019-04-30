@@ -10,18 +10,17 @@ const payments = new GroupPayments(
 	process.env.DOCUMENTUPDATE_ARN,
 );
 
-export default (event, context, callback) => {
+export default (event) => {
 
 	const data = JSON.parse(event.body);
 
 	try {
-		payments.createPenaltyGroupPaymentRecord(data, callback);
+		return payments.createPenaltyGroupPaymentRecord(data);
 	} catch (err) {
 		if (err.statusCode) {
-			callback(null, err);
-		} else {
-			callback(null, createResponse({ statusCode: 500, body: err }));
+			return err;
 		}
+		return createResponse({ statusCode: 500, body: err });
 	}
 
 };

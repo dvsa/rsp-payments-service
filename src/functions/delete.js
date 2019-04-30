@@ -9,8 +9,6 @@ const payments = new Payments(
 	process.env.DOCUMENTDELETE_ARN,
 );
 
-export default (event, context, callback) => {
-
-	payments.delete(event.pathParameters.id, callback);
-
+export default (event) => {
+	return payments.delete(event.pathParameters.id);
 };

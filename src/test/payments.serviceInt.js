@@ -19,10 +19,10 @@ describe('payments', () => {
 					.set('Context-Type', 'application/json')
 					.set('authorization', 'allow')
 					.expect(200)
-					.expect('Content-Type', 'application/json')
+					.expect('Content-Type', 'application/json; charset=utf-8')
 					.end((err, res) => {
 						if (err) throw err;
-						expect(res.body.payments.length).toEqual(4);
+						expect(res.body.payments.length).toEqual(7);
 						done();
 					});
 
@@ -41,7 +41,7 @@ describe('payments', () => {
 					.set('Context-Type', 'application/json')
 					.set('authorization', 'allow')
 					.expect(200)
-					.expect('Content-Type', 'application/json')
+					.expect('Content-Type', 'application/json; charset=utf-8')
 					.end((err, res) => {
 						if (err) throw err;
 						expect(res.body.payment).toEqual(expectedPayment);
@@ -59,7 +59,7 @@ describe('payments', () => {
 
 			request
 				.delete('/820500000877_FPN')
-				.set('Context-Type', 'application/json')
+				.set('Context-Type', 'application/json; charset=utf-8')
 				.set('authorization', 'allow')
 				.expect(200)
 				.end((err, res) => {
@@ -70,7 +70,7 @@ describe('payments', () => {
 						.set('authorization', 'allow')
 						.end((_err, _res) => {
 							if (_err) throw _err;
-							expect(_res.body.payments.length).toEqual(3);
+							expect(_res.body.payments.length).toEqual(6);
 							done();
 						});
 				});

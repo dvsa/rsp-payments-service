@@ -8,7 +8,7 @@ import createPenaltyGroupPaymentRecord from './functions/createPenaltyGroupPayme
 import getPenaltyGroupPaymentRecord from './functions/getPenaltyGroupPaymentRecord';
 import deletePenaltyGroupPaymentRecord from './functions/deletePenaltyGroupPaymentRecord';
 
-const handler = {
+export {
 	list,
 	get,
 	create,
@@ -19,5 +19,3 @@ const handler = {
 	getPenaltyGroupPaymentRecord,
 	deletePenaltyGroupPaymentRecord,
 };
-
-export default handler;
