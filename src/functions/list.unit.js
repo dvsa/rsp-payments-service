@@ -7,39 +7,24 @@ import createResponse from '../utils/createResponse';
 import payments from '../../mock-data/fake-payments.json';
 
 describe('list', () => {
-
-	let event;
-
 	afterEach(() => {
-		event = null;
+		Payments.prototype.list.restore();
 	});
 
 	describe('when a list of users are requested', () => {
-
 		beforeEach(() => {
-			event = {
-				httpMethod: 'GET',
-				pathParameters: null,
-			};
-			sinon.stub(Payments.prototype, 'list').callsFake((callback) => {
+			sinon.stub(Payments.prototype, 'list').callsFake(() => {
 				const response = createResponse({
 					body: payments,
 				});
-				callback(null, response);
+				return Promise.resolve(response);
 			});
 		});
 
-		it('should return a 200 success', (done) => {
-
-			list(event, null, (err, res) => {
-				expect(err).toBe(null);
-				expect(res.statusCode).toBe(200);
-				expect(res.body).toEqual(JSON.stringify(payments));
-				done();
-			});
-
+		it('should return a 200 success', async () => {
+			const res = await list();
+			expect(res.statusCode).toBe(200);
+			expect(res.body).toEqual(JSON.stringify(payments));
 		});
-
 	});
-
 });

@@ -9,9 +9,7 @@ const payments = new Payments(
 	process.env.DOCUMENTDELETE_ARN,
 );
 
-export default (event, context, callback) => {
-
+export default (event) => {
 	const data = JSON.parse(event.body);
-	payments.batchFetch(data.ids, callback);
-
+	return payments.batchFetch(data.ids);
 };
