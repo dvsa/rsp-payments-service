@@ -2,6 +2,7 @@
 import { Lambda } from 'aws-sdk';
 import createResponse from '../utils/createResponse';
 import isEmptyObject from '../utils/isEmptyObject';
+import { logInfo, logError } from '../utils/logger';
 
 const lambda = new Lambda({ region: 'eu-west-1' });
 export default class GroupPayments {
@@ -55,7 +56,11 @@ export default class GroupPayments {
 
 			return resp;
 		} catch (err) {
-			console.log(err);
+			logError('CreateGroupPaymentRecordError', {
+				paymentCode: PaymentCode,
+				penaltyType: PenaltyType,
+				error: err.message,
+			});
 			if (err.statusCode) {
 				return err;
 			}
@@ -75,7 +80,10 @@ export default class GroupPayments {
 	async deletePenaltyGroupPaymentRecord(id, type) {
 		let error;
 		let response;
-		console.log(`id, type: ${id}, ${type}`);
+		logInfo('DeleteGroupPaymentRecord', {
+			id,
+			type,
+		});
 
 		const createPutUpdateParams = item => ({
 			TableName: this.tableName,
@@ -95,7 +103,12 @@ export default class GroupPayments {
 		try {
 			const penaltyGroupPaymentRecord = await this.getPenaltyGroupPaymentRecord(id);
 			const { PaymentAmount, penaltyIds } = penaltyGroupPaymentRecord.Payments[type];
-			console.log(`PaymentAmount, penaltyIds: ${PaymentAmount}, ${penaltyIds}`);
+			logInfo('DeleteGroupPaymentRecordChildren', {
+				id,
+				type,
+				penaltyIds,
+				paymentAmount: PaymentAmount,
+			});
 
 			delete penaltyGroupPaymentRecord.Payments[type];
 			// Delete the entire item if there are no other payments
@@ -113,8 +126,12 @@ export default class GroupPayments {
 			response = createResponse({ body: penaltyGroupPaymentRecord });
 			return { response, penaltyIds };
 		} catch (err) {
-			console.log('error deleting penalty group payment record');
-			console.log(err);
+			logError('', {
+				id,
+				type,
+				message: 'Error deleting penalty group payment record',
+				error: err.message,
+			});
 			error = createResponse({
 				body: `Couldn't remove the payment of type: ${type}, for code ${id}`,
 				statusCode: err.statusCode || 501,
@@ -161,7 +178,7 @@ export default class GroupPayments {
 
 	async _createNewGroupPayment(paymentCode, penaltyType, paymentDetail, penaltyIds) {
 		try {
-			console.log('Create a new record if item doesn\'t exist');
+			// Create a new record if item doesn't exist
 			const putParams = {
 				TableName: this.tableName,
 				Item: {
@@ -204,7 +221,11 @@ export default class GroupPayments {
 	}
 
 	async _applyPaymentToPenaltyGroup(id, paymentStatus, penaltyType) {
-		console.log(`Invoke updatePenaltyGroupPaymentRecord, args: ${id}, ${paymentStatus}, ${penaltyType}`);
+		logInfo('InvokeUpdatePenaltyGroupPaymentRecord', {
+			id,
+			paymentStatus,
+			penaltyType,
+		});
 		return lambda.invoke({
 			FunctionName: this.updatePenaltyGroupPaymentRecordArn,
 			Payload: `{"body": { "id": "${id}", "paymentStatus": "${paymentStatus}", "penaltyType": "${penaltyType}" } }`,
