@@ -54,6 +54,11 @@ export default class GroupPayments {
 				this._createIndividualPaymentRecords(PenaltyIds, PaymentDetail, PaymentCode),
 			]);
 
+			logInfo('CreateGroupPaymentRecordSuccess', {
+				paymentCode: PaymentCode,
+				penaltyType: PenaltyType,
+			});
+
 			return resp;
 		} catch (err) {
 			logError('CreateGroupPaymentRecordError', {
@@ -103,12 +108,13 @@ export default class GroupPayments {
 		try {
 			const penaltyGroupPaymentRecord = await this.getPenaltyGroupPaymentRecord(id);
 			const { PaymentAmount, penaltyIds } = penaltyGroupPaymentRecord.Payments[type];
-			logInfo('DeleteGroupPaymentRecordChildren', {
+			const logMessage = {
 				id,
 				type,
 				penaltyIds,
 				paymentAmount: PaymentAmount,
-			});
+			};
+			logInfo('DeleteGroupPaymentRecordChildren', logMessage);
 
 			delete penaltyGroupPaymentRecord.Payments[type];
 			// Delete the entire item if there are no other payments
@@ -117,6 +123,7 @@ export default class GroupPayments {
 				// Need to update the document with the new payment status
 				await this._createMultipleDocumentUpdateInvocation(penaltyIds);
 				response = createResponse({ body: {} });
+				logInfo('DeleteGroupPaymentRecordAllUnpaidSuccess', logMessage);
 				return { response, penaltyIds };
 			}
 			// Otherwise just update the Payments object
@@ -124,6 +131,9 @@ export default class GroupPayments {
 			// Need to update the document(s) with the new payment status
 			await this._createMultipleDocumentUpdateInvocation(penaltyIds);
 			response = createResponse({ body: penaltyGroupPaymentRecord });
+
+			logInfo('DeleteGroupPaymentRecordChildrenSuccess', logMessage);
+
 			return { response, penaltyIds };
 		} catch (err) {
 			logError('', {
