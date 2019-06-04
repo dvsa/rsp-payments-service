@@ -3,6 +3,7 @@
 import AWS from 'aws-sdk';
 import Validation from 'rsp-validation';
 import createResponse from '../utils/createResponse';
+import { logError, logInfo } from '../utils/logger';
 
 const lambda = new AWS.Lambda({ region: 'eu-west-1' });
 
@@ -40,7 +41,10 @@ export default class Payments {
 				},
 			});
 		} catch (err) {
-			console.log(err);
+			logError('BatchFetchError', {
+				idList,
+				error: err.message,
+			});
 			return createResponse({
 				body: { err },
 				statusCode: 500,
@@ -131,11 +135,11 @@ export default class Payments {
 	}
 
 	async create(body) {
-		const constructedID = `${body.PenaltyReference}_${body.PenaltyType}`;
+		const constructedId = `${body.PenaltyReference}_${body.PenaltyType}`;
 		const params = {
 			TableName: this.tableName,
 			Item: {
-				ID: constructedID,
+				ID: constructedId,
 				PenaltyStatus: body.PenaltyStatus,
 				PaymentDetail: body.PaymentDetail,
 			},
@@ -147,7 +151,6 @@ export default class Payments {
 			PenaltyReference: body.PenaltyReference,
 			PaymentDetail: body.PaymentDetail,
 		};
-		// body.PaymentDetail.paymentCode
 		const checkTest = Validation.paymentValidation(bodyToValidate);
 
 		if (!checkTest.valid) {
@@ -158,14 +161,21 @@ export default class Payments {
 				},
 				statusCode: 405,
 			});
-			console.error(err);
+			logError('CreatePaymentValidationError', {
+				id: constructedId,
+				paymentDetails: bodyToValidate,
+				error: err.message,
+			});
 			return validationError;
 		}
 
 		try {
 			await this.db.put(params).promise();
 		} catch (err) {
-			console.error(err);
+			logError('CreatePaymentDatabaseError', {
+				putParams: params,
+				error: err.message,
+			});
 			return createResponse({
 				body: {
 					err,
@@ -176,20 +186,37 @@ export default class Payments {
 
 		const payItem = params.Item;
 
-		const payload = `{"body": { "id": "${constructedID}", "paymentStatus": "${body.PenaltyStatus}", "paymentAmount": "${payItem.PaymentDetail.PaymentAmount}","penaltyRefNo": "${body.PenaltyReference}", "penaltyType":"${body.PenaltyType}", "paymentToken":"${body.PaymentCode}" } }`;
+		const payload = {
+			body: {
+				id: constructedId,
+				paymentStatus: body.PenaltyStatus,
+				paymentAmount: payItem.PaymentDetail.PaymentAmount,
+				penaltyRefNo: body.PenaltyReference,
+				penaltyType: body.PenaltyType,
+				paymentToken: body.PaymentCode,
+			},
+		};
+
 		try {
 			await lambda.invoke({
 				FunctionName: this.documentUpdateArn,
-				Payload: payload,
+				Payload: JSON.stringify(payload),
 			}).promise();
+
+			logInfo('CreatePaymentSuccess', {
+				payment: payload.body,
+			});
+
 			return createResponse({
 				body: {
 					payment: payItem,
 				},
 			});
 		} catch (lambdaError) {
-			console.error(lambdaError);
-			console.error(`Payload: ${payload}`);
+			logError('CreatePaymentInvokeDocUpdateError', {
+				payload,
+				error: lambdaError.message,
+			});
 			return createResponse({ statusCode: 400, error: lambdaError });
 		}
 	}
@@ -223,6 +250,11 @@ export default class Payments {
 			return error;
 		}
 
+		logInfo('DeletePaymentRecordSuccess', {
+			id,
+			paymentStatusBeforeDeletion: 'UNPAID',
+		});
+
 		const deletedData = data.Attributes;
 		const paymentInfo = {
 			PenaltyStatus: deletedData.PenaltyStatus,
@@ -237,19 +269,31 @@ export default class Payments {
 
 		if (paymentInfo.PenaltyStatus === 'PAID') {
 			try {
+				// Update document status on deletion of payment
 				const externalData = await lambda.invoke({
 					FunctionName: this.documentDeleteArn,
 					Payload: `{"body": { "id": "${id}", "paymentStatus": "UNPAID", "paymentAmount": "${paymentInfo.PaymentDetail.PaymentAmount}","penaltyRefNo": "${paymentInfo.PenaltyReference}", "penaltyType":"${paymentInfo.PenaltyType}", "paymentToken":"${paymentInfo.PaymentCode}" } }`,
 				}).promise();
+
+				logInfo('UpdateDocumentOnDeleteSuccess', {
+					id,
+					paymentInfo,
+				});
 
 				if (externalData.Payload) {
 					return response;
 				}
 				return createResponse({ statusCode: 400 });
 			} catch (lambdaError) {
+				logError('UpdateDocumentOnDeleteError', {
+					error: lambdaError,
+					id,
+					paymentInfo,
+				});
 				return createResponse({ statusCode: 400, error: lambdaError });
 			}
 		}
+
 		return response;
 	}
 
@@ -282,16 +326,26 @@ export default class Payments {
 				},
 				statusCode: 405,
 			});
+			logError('UpdatePaymentValidationError', {
+				payment: body,
+			});
 			return validationError;
 		}
 
 		try {
 			const result = this.db.update(params).promise();
+			logInfo('UpdatePaymentSuccess', {
+				payment: body,
+			});
 			return createResponse({
 				statusCode: 200,
 				body: result.Attributes,
 			});
 		} catch (err) {
+			logError('UpdatePaymentDatabaseError', {
+				params,
+				error: err.message,
+			});
 			return createResponse({
 				body: {
 					err: 'Failed to update payment',
