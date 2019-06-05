@@ -1,6 +1,7 @@
 import { doc } from 'serverless-dynamodb-client';
 import GroupPayments from '../services/groupPayments';
 import Payments from '../services/payments';
+import { logError } from '../utils/logger';
 
 const groupPayments = new GroupPayments(
 	doc,
@@ -21,8 +22,11 @@ const payments = new Payments(
 function deletePayments(penaltyIds) {
 	const deletePromises = penaltyIds.map(penaltyId =>
 		payments.deletePaymentOnly(penaltyId).catch((err) => {
-			console.log('Encountered error when deleting payment for group payment.');
-			console.log(err);
+			logError('DeletePaymentForGroupError', {
+				penaltyId,
+				message: 'Encountered error when deleting payment for group payment.',
+				error: err.message,
+			});
 		}));
 
 	return Promise.all(deletePromises);
