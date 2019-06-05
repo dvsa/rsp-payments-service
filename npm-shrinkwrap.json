@@ -9608,9 +9608,9 @@
       }
     },
     "rsp-validation": {
-      "version": "1.5.4",
-      "resolved": "https://registry.npmjs.org/rsp-validation/-/rsp-validation-1.5.4.tgz",
-      "integrity": "sha512-HNYdBmq7OEwYGbV2yuK03JZZtxmrRm5TzSnDjSTC+jiy+svbVKo3XXmYExsts5Qnb9ZCL0A+HXb9bDsgShkShQ==",
+      "version": "1.5.17",
+      "resolved": "https://registry.npmjs.org/rsp-validation/-/rsp-validation-1.5.17.tgz",
+      "integrity": "sha512-0o8L9wvDrwlIX5ku5KhWfKDv3ax9NAOTUgsPjEV8YwIxKhUDxAgxBWyu1b9a2hb8hz/VYTX8PY12/TimX0tesg==",
       "requires": {
         "joi": "^13.1.2"
       }
