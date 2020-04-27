@@ -57,7 +57,7 @@ plugins:
   - serverless-dotenv-plugin
 provider:
   name: aws
-  runtime: nodejs8.10
+  runtime: nodejs10.18.0
   region: eu-west-1
 
 functions:
@@ -107,7 +107,7 @@ functions:
                 description: "The id of the payment to fetch"
                 schema:
                   type: "string"
-                  pattern: "^[0-9]+$"          
+                  pattern: "^[0-9]+$"
             requestBody:
               description: "Nothing"
             requestModels:
@@ -146,7 +146,7 @@ functions:
                 description: "The id of the payment to fetch"
                 schema:
                   type: "string"
-                  pattern: "^[0-9]+$"          
+                  pattern: "^[0-9]+$"
             requestBody:
               description: "Nothing"
             requestModels:
@@ -283,7 +283,7 @@ functions:
                 responseBody:
                   description: "500 server error"
                 responseModels:
-                  application/json: "ErrorResponse"                          
+                  application/json: "ErrorResponse"
   delete:
     handler: handler.remove
     memorySize: 128
@@ -317,7 +317,7 @@ functions:
                 responseBody:
                   description: "500 server error"
                 responseModels:
-                  application/json: "ErrorResponse"          
+                  application/json: "ErrorResponse"
   update:
     handler: handler.update
     memorySize: 128
@@ -351,7 +351,7 @@ functions:
                 responseBody:
                   description: "500 server error"
                 responseModels:
-                  application/json: "ErrorResponse"          
+                  application/json: "ErrorResponse"
 resources:
   Resources:
     paymentsTable:
@@ -393,7 +393,7 @@ resources:
                 - dynamodb:Scan
                 - dynamodb:GetItem
                 - dynamodb:PutItem
-                - dynamodb:BatchGetItem 
+                - dynamodb:BatchGetItem
                 - dynamodb:BatchWriteItem
                 - dynamodb:UpdateItem
                 - dynamodb:DeleteItem
@@ -403,7 +403,7 @@ resources:
                 - dynamodb:Scan
                 - dynamodb:GetItem
                 - dynamodb:PutItem
-                - dynamodb:BatchGetItem 
+                - dynamodb:BatchGetItem
                 - dynamodb:UpdateItem
                 - dynamodb:DeleteItem
               Resource: arn:aws:dynamodb:*:*:table/groupPaymentsTable
