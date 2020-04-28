@@ -83,6 +83,7 @@ export default class GroupPayments {
 	}
 
 	async deletePenaltyGroupPaymentRecord(id, type) {
+		console.info('TYPE', type);
 		let error;
 		let response;
 		logInfo('DeleteGroupPaymentRecord', {
