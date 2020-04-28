@@ -107,6 +107,7 @@ export default class GroupPayments {
 
 		try {
 			const penaltyGroupPaymentRecord = await this.getPenaltyGroupPaymentRecord(id);
+			console.info('PENALTY GROUP RECORD', penaltyGroupPaymentRecord);
 			const { PaymentAmount, penaltyIds } = penaltyGroupPaymentRecord.Payments[type];
 			const logMessage = {
 				id,
