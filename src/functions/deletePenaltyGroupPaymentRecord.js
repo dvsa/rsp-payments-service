@@ -33,7 +33,9 @@ function deletePayments(penaltyIds) {
 }
 
 export default async (event) => {
+	console.info('EVENT', event);
 	const { id, penaltyType } = event.pathParameters;
+	console.info('EVENT PENALTY TYPE', penaltyType);
 	const {
 		response,
 		penaltyIds,
