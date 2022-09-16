@@ -1,6 +1,5 @@
 service: rsp-payments
 
-frameworkVersion: ">=1.1.0 <2.0.0"
 custom:
   documentation:
     models:
@@ -40,6 +39,8 @@ custom:
       inMemory: true
       migrate: true
       seed: true
+    stages:
+      - dev
     seed:
       test:
         sources:
@@ -57,8 +58,9 @@ plugins:
   - serverless-dotenv-plugin
 provider:
   name: aws
-  runtime: nodejs10.18.0
+  runtime: nodejs16.x
   region: eu-west-1
+  stage: dev
 
 functions:
   list:
@@ -66,10 +68,11 @@ functions:
     memorySize: 128
     events:
       -
-        http:
+        httpApi:
           path: payments
           method: get
-          authorizer: aws_iam
+          authorizer:
+            type: aws_iam
           cors: true
           documentation:
             summary: "List of Payments"
@@ -94,10 +97,11 @@ functions:
     memorySize: 128
     events:
       -
-        http:
+        httpApi:
           path: payments/{id}
           method: get
-          authorizer: aws_iam
+          authorizer:
+            type: aws_iam
           cors: true
           documentation:
             summary: "Get payment"
@@ -133,10 +137,11 @@ functions:
     memorySize: 128
     events:
       -
-        http:
+        httpApi:
           path: groupPayments/{id}
           method: get
-          authorizer: aws_iam
+          authorizer:
+            type: aws_iam
           cors: true
           documentation:
             summary: "Get payment"
@@ -172,10 +177,11 @@ functions:
     memorySize: 128
     events:
       -
-        http:
+        httpApi:
           path: groupPayments/{id}/{penaltyType}
           method: delete
-          authorizer: aws_iam
+          authorizer:
+            type: aws_iam
           cors: true
           documentation:
             summary: "Delete payment details for a penalty group"
@@ -207,10 +213,11 @@ functions:
     memorySize: 128
     events:
       -
-        http:
+        httpApi:
           path: payments
           method: post
-          authorizer: aws_iam
+          authorizer:
+            type: aws_iam
           cors: true
           documentation:
             summary: "Create payment"
@@ -235,10 +242,11 @@ functions:
     memorySize: 128
     events:
       -
-        http:
+        httpApi:
           path: groupPayments
           method: post
-          authorizer: aws_iam
+          authorizer:
+            type: aws_iam
           cors: true
           documentation:
             summary: "Create payment"
@@ -261,10 +269,11 @@ functions:
     memorySize: 128
     events:
       -
-        http:
+        httpApi:
           path: payments/batches
           method: post
-          authorizer: aws_iam
+          authorizer:
+            type: aws_iam
           cors: true
           documentation:
             summary: "Fetch a batch of payments"
@@ -289,10 +298,11 @@ functions:
     memorySize: 128
     events:
       -
-        http:
+        httpApi:
           path: payments/{id}
           method: delete
-          authorizer: aws_iam
+          authorizer:
+            type: aws_iam
           cors: true
           documentation:
             summary: "Delete payment details"
@@ -323,10 +333,11 @@ functions:
     memorySize: 128
     events:
       -
-        http:
+        httpApi:
           path: payments/{id}
           method: put
-          authorizer: aws_iam
+          authorizer:
+            type: aws_iam
           cors: true
           documentation:
             summary: "Update payment details"
