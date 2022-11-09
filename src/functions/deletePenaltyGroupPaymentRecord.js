@@ -32,7 +32,7 @@ function deletePayments(penaltyIds) {
 	return Promise.all(deletePromises);
 }
 
-export default async (event) => {
+export const handler = async (event) => {
 	const { id, penaltyType } = event.pathParameters;
 	const {
 		response,
@@ -45,3 +45,5 @@ export default async (event) => {
 
 	return response;
 };
+
+export default handler;

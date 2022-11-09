@@ -9,6 +9,8 @@ const payments = new Payments(
 	process.env.DOCUMENTDELETE_ARN,
 );
 
-export default () => {
+export const handler = () => {
 	return payments.list();
 };
+
+export default handler;

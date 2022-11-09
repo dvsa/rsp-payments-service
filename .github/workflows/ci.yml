@@ -50,7 +50,7 @@ jobs:
           list,
           get,
           create,
-          remove,
+          delete,
           update,
           batchFetch,
           createPenaltyGroupPaymentRecord,
