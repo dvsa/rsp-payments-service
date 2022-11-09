@@ -20,14 +20,13 @@ const payments = new Payments(
 );
 
 function deletePayments(penaltyIds) {
-	const deletePromises = penaltyIds.map(penaltyId =>
-		payments.deletePaymentOnly(penaltyId).catch((err) => {
-			logError('DeletePaymentForGroupError', {
-				penaltyId,
-				message: 'Encountered error when deleting payment for group payment.',
-				error: err.message,
-			});
-		}));
+	const deletePromises = penaltyIds.map((penaltyId) => payments.deletePaymentOnly(penaltyId).catch((err) => {
+		logError('DeletePaymentForGroupError', {
+			penaltyId,
+			message: 'Encountered error when deleting payment for group payment.',
+			error: err.message,
+		});
+	}));
 
 	return Promise.all(deletePromises);
 }

@@ -7,7 +7,10 @@ import { logInfo, logError } from '../utils/logger';
 const lambda = new Lambda({ region: 'eu-west-1' });
 export default class GroupPayments {
 	constructor(
-		db, tableName, updatePenaltyGroupPaymentRecordArn, updateMultiplePenaltyDocumentsArn,
+		db,
+		tableName,
+		updatePenaltyGroupPaymentRecordArn,
+		updateMultiplePenaltyDocumentsArn,
 		documentUpdateArn,
 	) {
 		this.db = db;
@@ -90,7 +93,7 @@ export default class GroupPayments {
 			type,
 		});
 
-		const createPutUpdateParams = item => ({
+		const createPutUpdateParams = (item) => ({
 			TableName: this.tableName,
 			Item: item,
 			ConditionExpression: 'attribute_exists(#ID)',
@@ -99,7 +102,7 @@ export default class GroupPayments {
 			},
 		});
 
-		const createDeleteParams = deleteId => ({
+		const createDeleteParams = (deleteId) => ({
 			TableName: this.tableName,
 			Key: { ID: deleteId },
 			ReturnValues: 'ALL_OLD',
@@ -165,7 +168,7 @@ export default class GroupPayments {
 
 	async _createIndividualPaymentRecords(penaltyIds, paymentDetail, paymentCode) {
 		try {
-			const singlePaymentPutRequests = penaltyIds.map(id => ({
+			const singlePaymentPutRequests = penaltyIds.map((id) => ({
 				PutRequest: {
 					Item: {
 						ID: id,

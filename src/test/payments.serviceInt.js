@@ -34,7 +34,7 @@ describe('payments', () => {
 
 			it('should return the correct payment', (done) => {
 
-				const expectedPayment = payments.filter(payment => payment.ID === '820500000877_FPN')[0];
+				const expectedPayment = payments.filter((payment) => payment.ID === '820500000877_FPN')[0];
 
 				request
 					.get('/820500000877_FPN')
