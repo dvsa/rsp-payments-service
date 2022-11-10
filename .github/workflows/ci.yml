@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+
+jobs:
+  lint:
+    uses: dvsa/.github/.github/workflows/nodejs-lint.yaml@v2
+
+  test:
+    uses: dvsa/.github/.github/workflows/nodejs-test.yaml@v2
+
+  security:
+    uses: dvsa/.github/.github/workflows/nodejs-security.yaml@v2
+    with:
+      args: --all-projects
+    secrets:
+      SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+  build-names:
+    runs-on: ubuntu-latest
+    outputs:
+      short_sha: ${{ steps.sha.outputs.SHORT_SHA }}
+      pretty_branch_name: ${{ steps.branch.outputs.NAME }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set short sha output
+        id: sha
+        run: echo "SHORT_SHA=$(git rev-parse --short=11 HEAD)" >> $GITHUB_OUTPUT
+      - name: Set archive name output
+        id: branch
+        run: |
+          export PRETTY_BRANCH_NAME=$(tr '/' '-' <<< ${{ github.ref_name }})
+          echo "NAME=${PRETTY_BRANCH_NAME}.zip" >> $GITHUB_OUTPUT
+
+  build:
+    uses: dvsa/.github/.github/workflows/nodejs-build.yaml@v2
+    needs: [ build-names ]
+    with:
+      upload_artifact: true
+      build_command: build:prod
+
+  upload-to-s3:
+    if: startsWith( github.ref, 'refs/heads/feature/') || startsWith( github.ref, 'refs/heads/fix/') || ${{ github.ref_name == github.event.repository.default_branch }}
+    uses: dvsa/.github/.github/workflows/upload-to-s3.yaml@v2
+    needs: [ lint, test, build, build-names ]
+    strategy:
+      matrix:
+        lambdaName: [
+          list,
+          get,
+          create,
+          remove,
+          update,
+          batchFetch,
+          createPenaltyGroupPaymentRecord,
+          getPenaltyGroupPaymentRecord,
+          deletePenaltyGroupPaymentRecord,
+        ]
+    with:
+      environment: nonprod
+      short_commit: ${{ needs.build-names.outputs.short_sha }}
+      artifact: ${{ matrix.lambdaName }}.zip
+      bucket_key: payments/${{ matrix.lambdaName }}/${{ needs.build-names.outputs.pretty_branch_name }}.zip
+    permissions:
+      id-token: write
+    secrets:
+      AWS_ACCOUNT: ${{ secrets.RSP_AWS_ACCOUNT }}
+      AWS_REGION: ${{ secrets.RSP_AWS_REGION }}
+      BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
