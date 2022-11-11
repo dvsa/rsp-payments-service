@@ -22,7 +22,7 @@ describe('get', () => {
 					id: '1',
 				},
 			};
-			payment = payments.filter(item => item.id === '1');
+			payment = payments.filter((item) => item.id === '1');
 			sinon.stub(Payments.prototype, 'get').callsFake(() => {
 				const response = createResponse({
 					body: payment,

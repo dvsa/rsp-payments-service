@@ -10,7 +10,7 @@ const payments = new GroupPayments(
 	process.env.DOCUMENTUPDATE_ARN,
 );
 
-export default (event) => {
+export const handler = (event) => {
 
 	const data = JSON.parse(event.body);
 
@@ -24,3 +24,5 @@ export default (event) => {
 	}
 
 };
+
+export default handler;

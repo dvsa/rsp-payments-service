@@ -1,0 +1,46 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+
+Globals:
+  Function:
+    Runtime: nodejs16.x
+    CodeUri: src/functions
+
+Resources:
+    update:
+      Type: 'AWS::Serverless::Function'
+      Properties:
+        Handler: update.handler
+    delete:
+      Type: 'AWS::Serverless::Function'
+      Properties:
+        Handler: delete.handler
+    batchFetch:
+      Type: 'AWS::Serverless::Function'
+      Properties:
+        Handler: batchFetch.handler
+    create:
+      Type: 'AWS::Serverless::Function'
+      Properties:
+        Handler: create.handler
+    list:
+      Type: 'AWS::Serverless::Function'
+      Properties:
+        Handler: list.handler
+    get:
+      Type: 'AWS::Serverless::Function'
+      Properties:
+        Handler: get.handler
+    getPenaltyGroupPaymentRecord:
+      Type: 'AWS::Serverless::Function'
+      Properties:
+        Handler: getPenaltyGroupPaymentRecord.handler
+    createPenaltyGroupPaymentRecord:
+      Type: 'AWS::Serverless::Function'
+      Properties:
+        Handler: createPenaltyGroupPaymentRecord.handler
+    deletePenaltyGroupPaymentRecord:
+      Type: 'AWS::Serverless::Function'
+      Properties:
+        Handler: deletePenaltyGroupPaymentRecord.handler
+	

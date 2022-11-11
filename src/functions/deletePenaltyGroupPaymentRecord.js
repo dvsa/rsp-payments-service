@@ -20,19 +20,18 @@ const payments = new Payments(
 );
 
 function deletePayments(penaltyIds) {
-	const deletePromises = penaltyIds.map(penaltyId =>
-		payments.deletePaymentOnly(penaltyId).catch((err) => {
-			logError('DeletePaymentForGroupError', {
-				penaltyId,
-				message: 'Encountered error when deleting payment for group payment.',
-				error: err.message,
-			});
-		}));
+	const deletePromises = penaltyIds.map((penaltyId) => payments.deletePaymentOnly(penaltyId).catch((err) => {
+		logError('DeletePaymentForGroupError', {
+			penaltyId,
+			message: 'Encountered error when deleting payment for group payment.',
+			error: err.message,
+		});
+	}));
 
 	return Promise.all(deletePromises);
 }
 
-export default async (event) => {
+export const handler = async (event) => {
 	const { id, penaltyType } = event.pathParameters;
 	const {
 		response,
@@ -45,3 +44,5 @@ export default async (event) => {
 
 	return response;
 };
+
+export default handler;

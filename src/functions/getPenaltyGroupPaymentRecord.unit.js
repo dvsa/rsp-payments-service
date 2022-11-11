@@ -21,7 +21,7 @@ describe('get', () => {
 					id: '1',
 				},
 			};
-			payment = groupPayments.filter(item => item.ID === '15xk9i0xujgg');
+			payment = groupPayments.filter((item) => item.ID === '15xk9i0xujgg');
 			sinon.stub(GroupPayments.prototype, 'getPenaltyGroupPaymentRecord').resolves(payment);
 		});
 

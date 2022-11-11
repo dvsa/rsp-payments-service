@@ -234,7 +234,7 @@ describe('penaltyGroups', () => {
 });
 
 async function getPaymentRecords(penaltyIds) {
-	const penaltyIdKeyObjs = penaltyIds.map(id => ({ ID: id }));
+	const penaltyIdKeyObjs = penaltyIds.map((id) => ({ ID: id }));
 	const batchGetParams = {
 		RequestItems: {
 			paymentsTable: {

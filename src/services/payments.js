@@ -355,4 +355,3 @@ export default class Payments {
 		}
 	}
 }
-

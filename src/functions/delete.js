@@ -9,6 +9,8 @@ const payments = new Payments(
 	process.env.DOCUMENTDELETE_ARN,
 );
 
-export default (event) => {
+export const handler = (event) => {
 	return payments.delete(event.pathParameters.id);
 };
+
+export default handler;

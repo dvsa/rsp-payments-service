@@ -13,7 +13,8 @@
       "no-underscore-dangle": [2, { "allowAfterThis": true, "allow": ["_id"] }],
       "no-param-reassign": ["error", { "props": false }],
       "import/no-extraneous-dependencies": ["error", {"devDependencies": true}],
-      "no-tabs": 0
+      "no-tabs": 0,
+      "max-len": "off"
     }
 
 }

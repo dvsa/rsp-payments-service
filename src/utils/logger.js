@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 export function logInfo(logName, message) {
 	console.log(JSON.stringify({
 		logName,

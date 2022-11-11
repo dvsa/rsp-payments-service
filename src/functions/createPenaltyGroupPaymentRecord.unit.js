@@ -21,8 +21,8 @@ describe('createPenaltyGroupPaymentRecord', () => {
 			httpMethod: 'POST',
 			body: '{"PaymentCode":"12212","PenaltyType":"FPN","PaymentDetail":{"PaymentMethod":"CARD","PaymentRef":"receipt_reference","AuthCode":"auth_code","PaymentAmount":120,"PaymentDate":1533200397}}',
 		};
-		payment = groupPayments.filter(item => item.ID === '15xk9i0xujgg');
-		createPenaltyGroupPaymentRecordStub = sinon.stub(GroupPayments.prototype, 'createPenaltyGroupPaymentRecord').callsFake((id) => {
+		payment = groupPayments.filter((item) => item.ID === '15xk9i0xujgg');
+		createPenaltyGroupPaymentRecordStub = sinon.stub(GroupPayments.prototype, 'createPenaltyGroupPaymentRecord').callsFake(() => {
 			const response = createResponse({
 				body: payment,
 			});
