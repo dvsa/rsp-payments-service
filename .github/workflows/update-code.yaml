@@ -1,0 +1,44 @@
+name: Run Lambda Function Update
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Select environment to deploy to'
+        required: true
+        default: nonprod
+        type: environment
+      zip_archive:
+        description: 'Enter the name of the zip object from S3 to deploy. Example: master.zip'
+        required: true
+        default: master.zip
+        type: string
+
+jobs:
+
+  lambdas:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.json.outputs.MATRIX }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Read in lambdas names from JSON
+        id: json
+        run: |
+          echo "MATRIX=$(jq -c . < ./lambdas.json)" >> $GITHUB_OUTPUT
+
+  update-lambda-code:
+    uses: dvsa/.github/.github/workflows/update-lambda-function.yaml@v2.2
+    needs: [ lambdas ]
+    strategy:
+      matrix:
+        lambdaName: ${{ fromJSON(needs.lambdas.outputs.matrix).lambdas }}
+    with:
+      environment: ${{ github.event.inputs.environment }}
+      lambda_function_name: rsp-nonprod-apis-payments-${{ matrix.lambdaName }}
+      bucket_key: payments/${{ matrix.lambdaName }}/${{ github.event.inputs.zip_archive }}.zip
+    permissions:
+      id-token: write
+    secrets:
+      AWS_ACCOUNT: ${{ secrets.RSP_AWS_ACCOUNT }}
+      AWS_REGION: ${{ secrets.RSP_AWS_REGION }}
+      BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
