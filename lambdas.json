@@ -1,0 +1,14 @@
+{
+    "description": "File containing the names of all the lambda functions in this service. Lambda names are used for building in webpack and deploying from GitHub Actions.",
+    "lambdas": [
+        "list",
+        "get",
+        "create",
+        "delete",
+        "update",
+        "batchFetch",
+        "createPenaltyGroupPaymentRecord",
+        "getPenaltyGroupPaymentRecord",
+        "deletePenaltyGroupPaymentRecord"
+    ]
+}
