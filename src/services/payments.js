@@ -256,6 +256,7 @@ export default class Payments {
 		});
 
 		const deletedData = data.Attributes;
+
 		const paymentInfo = {
 			PenaltyStatus: deletedData.PenaltyStatus,
 			PenaltyType: deletedData.PenaltyType,

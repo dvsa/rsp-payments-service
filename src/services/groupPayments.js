@@ -67,7 +67,7 @@ export default class GroupPayments {
 			logError('CreateGroupPaymentRecordError', {
 				paymentCode: PaymentCode,
 				penaltyType: PenaltyType,
-				error: err.message,
+				error: err.message ? err.message : err,
 			});
 			if (err.statusCode) {
 				return err;
@@ -88,6 +88,20 @@ export default class GroupPayments {
 	async deletePenaltyGroupPaymentRecord(id, type) {
 		let error;
 		let response;
+
+		if (!id || !type) {
+			logError('DeleteGroupPaymentRecordError', {
+				message: 'Error deleting penalty group payment record. Missing parameter id or type.',
+				idParam: id,
+				typeParam: type,
+			});
+			error = createResponse({
+				body: `Couldn't remove the payment of type: ${type}, for code ${id}`,
+				statusCode: 400,
+			});
+			return { response: error };
+		}
+
 		logInfo('DeleteGroupPaymentRecord', {
 			id,
 			type,
@@ -139,11 +153,12 @@ export default class GroupPayments {
 
 			return { response, penaltyIds };
 		} catch (err) {
-			logError('', {
+			logError('DeleteGroupPaymentRecordError', {
 				id,
 				type,
 				message: 'Error deleting penalty group payment record',
-				error: err.message,
+				errorMessage: err.message,
+				error: err,
 			});
 			error = createResponse({
 				body: `Couldn't remove the payment of type: ${type}, for code ${id}`,
