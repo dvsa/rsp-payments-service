@@ -1,0 +1,43 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+env:
+  SOURCE_ZIP: master.zip
+  KEY_PATH: payments
+
+jobs:
+
+  lambdas:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.json.outputs.MATRIX }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Read in lambdas names from JSON
+        id: json
+        run: |
+          echo "MATRIX=$(jq -c . < ./lambdas.json)" >> $GITHUB_OUTPUT
+  promote:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    needs: [ lambdas ]
+    strategy:
+      matrix:
+        lambdaName: ${{ fromJSON(needs.lambdas.outputs.matrix).lambdas }}
+    steps:
+      - name: Configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v1-node16
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.RSP_AWS_ACCOUNT }}:role/GithubActionsRole
+          role-session-name: GithubActionsSession
+          aws-region: ${{ secrets.RSP_AWS_REGION }}
+      - name: Upload to s3
+        run: >
+          aws s3api copy-object
+          --copy-source ${{ secrets.RSP_NONPROD_S3_BUCKET_NAME }}/${{ env.KEY_PATH }}/${{ matrix.lambdaName }}/${{ env.SOURCE_ZIP }}
+          --key ${{ env.KEY_PATH }}/${{ matrix.lambdaName }}/release-${{ github.ref_name }}.zip
+          --bucket ${{ secrets.RSP_NONPROD_S3_BUCKET_NAME }}
