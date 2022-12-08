@@ -35,7 +35,7 @@ jobs:
     with:
       environment: ${{ github.event.inputs.environment }}
       lambda_function_name: rsp-nonprod-apis-payments-${{ matrix.lambdaName }}
-      bucket_key: payments/${{ matrix.lambdaName }}/${{ github.event.inputs.zip_archive }}.zip
+      bucket_key: payments/${{ matrix.lambdaName }}/${{ github.event.inputs.zip_archive }}
     permissions:
       id-token: write
     secrets:
