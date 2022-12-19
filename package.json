@@ -73,11 +73,11 @@
     "webpack-merge": "^5.8.0"
   },
   "dependencies": {
+    "@dvsa/rsp-validation": "^1.6.1",
     "aws-sdk": "^2.1251.0",
     "joi": "^17.7.0",
     "request": "^2.88.0",
     "request-promise": "^4.2.2",
-    "rsp-validation": "^1.5.17",
     "serverless-dynamodb-client": "0.0.2",
     "uuid": "^9.0.0"
   }
