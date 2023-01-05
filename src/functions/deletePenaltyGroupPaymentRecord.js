@@ -33,6 +33,7 @@ function deletePayments(penaltyIds) {
 
 export const handler = async (event) => {
 	const { id, penaltyType } = event.pathParameters;
+
 	const {
 		response,
 		penaltyIds,
