@@ -73,7 +73,7 @@
     "webpack-merge": "^5.8.0"
   },
   "dependencies": {
-    "@dvsa/rsp-validation": "^1.7.0",
+    "@dvsa/rsp-validation": "^1.8.0",
     "aws-sdk": "^2.1251.0",
     "joi": "^17.7.0",
     "request": "^2.88.0",
