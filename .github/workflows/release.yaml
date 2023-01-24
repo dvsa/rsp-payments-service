@@ -41,6 +41,9 @@ jobs:
     needs: [lambdas, release-please]
     permissions:
       id-token: write
+    strategy:
+      matrix:
+        lambdaName: ${{ fromJSON(needs.lambdas.outputs.matrix).lambdas }}
     steps:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1-node16
@@ -54,5 +57,5 @@ jobs:
           --tagging-directive REPLACE
           --tagging promote=YES
           --copy-source ${{ secrets.RSP_NONPROD_S3_BUCKET_NAME }}/${{ env.COPY_SOURCE }}
-          --key ${{ secrets.S3_KEY_PATH }}/release-${{ needs.release-please.outputs.tag_name }}.zip
+          --key ${{ secrets.S3_KEY_PATH }}/${{ matrix.lambdaName }}/release-${{ needs.release-please.outputs.tag_name }}.zip
           --bucket ${{ secrets.RSP_NONPROD_S3_BUCKET_NAME }}
