@@ -1,6 +1,6 @@
 {
   "name": "awslambda-apigateway-dynamodb-serverless-offline-template",
-  "version": "1.0.0",
+  "version": "3.0.0",
   "description": "Emulate AWS λ, API Gateway & DynamoDB locally when developing",
   "repository": "<replace>",
   "author": "",
