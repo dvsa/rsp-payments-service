@@ -56,6 +56,6 @@ jobs:
           aws s3api copy-object
           --tagging-directive REPLACE
           --tagging promote=YES
-          --copy-source ${{ secrets.RSP_NONPROD_S3_BUCKET_NAME }}/${{ env.COPY_SOURCE }}
+          --copy-source ${{ secrets.RSP_NONPROD_S3_BUCKET_NAME }}/${{ secrets.S3_KEY_PATH }}/${{ matrix.lambdaName }}/${{ env.COPY_SOURCE }}
           --key ${{ secrets.S3_KEY_PATH }}/${{ matrix.lambdaName }}/release-${{ needs.release-please.outputs.tag_name }}.zip
           --bucket ${{ secrets.RSP_NONPROD_S3_BUCKET_NAME }}
