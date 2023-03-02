@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.0.2](https://github.com/dvsa/rsp-payments-service/compare/v3.0.1...v3.0.2) (2023-03-02)
+
+
+### Bug Fixes
+
+* bumped validation package ([#55](https://github.com/dvsa/rsp-payments-service/issues/55)) ([381063d](https://github.com/dvsa/rsp-payments-service/commit/381063dacb8916660bf1542a9b17798b05a454ee))
+
 ## [3.0.1](https://github.com/dvsa/rsp-payments-service/compare/v3.0.0...v3.0.1) (2023-02-22)
 
 
