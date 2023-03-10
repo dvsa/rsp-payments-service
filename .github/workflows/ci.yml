@@ -7,13 +7,13 @@ on:
 
 jobs:
   lint:
-    uses: dvsa/.github/.github/workflows/nodejs-lint.yaml@v2
+    uses: dvsa/.github/.github/workflows/nodejs-lint.yaml@v3.1.0
 
   test:
-    uses: dvsa/.github/.github/workflows/nodejs-test.yaml@v2
+    uses: dvsa/.github/.github/workflows/nodejs-test.yaml@v3.1.0
 
   security:
-    uses: dvsa/.github/.github/workflows/nodejs-security.yaml@v2
+    uses: dvsa/.github/.github/workflows/nodejs-security.yaml@v3.1.0
     with:
       args: --all-projects
     secrets:
@@ -41,45 +41,48 @@ jobs:
           echo "MATRIX=$(jq -c . < ./lambdas.json)" >> $GITHUB_OUTPUT
 
   build:
-    uses: dvsa/.github/.github/workflows/nodejs-build.yaml@v2
+    uses: dvsa/.github/.github/workflows/nodejs-build.yaml@v3.1.0
     needs: [ build-names ]
     with:
-      upload_artifact: true
-      build_command: build:prod
+      upload-artifact: true
+      build-command: npm run build:prod
 
   upload-s3:
-    if: startsWith( github.ref, 'refs/heads/feature/') || startsWith( github.ref, 'refs/heads/fix/') || ${{ github.ref_name == github.event.repository.default_branch }}
-    uses: dvsa/.github/.github/workflows/upload-to-s3.yaml@v2
+    if: startsWith(github.ref, 'refs/heads/feat/') || startsWith(github.ref, 'refs/heads/feature/') || startsWith(github.ref, 'refs/heads/fix/') || startsWith(github.ref, 'refs/heads/master')
+    uses: dvsa/.github/.github/workflows/upload-to-s3.yaml@v3.1.0
     needs: [ lint, test, build, build-names ]
     strategy:
       matrix:
         lambdaName: ${{ fromJSON(needs.build-names.outputs.matrix).lambdas }}
     with:
       environment: nonprod
-      short_commit: ${{ needs.build-names.outputs.short_sha }}
+      short-commit: ${{ needs.build-names.outputs.short_sha }}
       artifact: ${{ matrix.lambdaName }}.zip
-      bucket_key: payments/${{ matrix.lambdaName }}/${{ needs.build-names.outputs.pretty_branch_name }}.zip
+      bucket-key: payments/${{ matrix.lambdaName }}/${{ needs.build-names.outputs.pretty_branch_name }}.zip
+      optional-tags: lifecycle_subject=${{ startsWith(github.ref, 'refs/heads/feat/') || startsWith(github.ref, 'refs/heads/feature/') || startsWith(github.ref, 'refs/heads/fix/') }}
     permissions:
       id-token: write
     secrets:
+      AWS_ROLE_TO_ASSUME_ARN: ${{ secrets.AWS_ROLE_TO_ASSUME_ARN }}
       AWS_ACCOUNT: ${{ secrets.RSP_AWS_ACCOUNT }}
       AWS_REGION: ${{ secrets.RSP_AWS_REGION }}
       BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
 
   update-lambda-code:
     if: ${{ github.ref_name == github.event.repository.default_branch }}
-    uses: dvsa/.github/.github/workflows/update-lambda-function.yaml@v2.2
+    uses: dvsa/.github/.github/workflows/update-lambda-function.yaml@v3.1.0
     needs: [ build-names, build, upload-s3 ]
     strategy:
       matrix:
         lambdaName: ${{ fromJSON(needs.build-names.outputs.matrix).lambdas }}
     with:
       environment: nonprod
-      lambda_function_name: rsp-nonprod-apis-payments-${{ matrix.lambdaName }}
-      bucket_key: payments/${{ matrix.lambdaName }}/${{ needs.build-names.outputs.pretty_branch_name }}.zip
+      lambda-function-name: rsp-nonprod-apis-payments-${{ matrix.lambdaName }}
+      bucket-key: payments/${{ matrix.lambdaName }}/${{ needs.build-names.outputs.pretty_branch_name }}.zip
     permissions:
       id-token: write
     secrets:
+      AWS_ROLE_TO_ASSUME_ARN: ${{ secrets.AWS_ROLE_TO_ASSUME_ARN }}
       AWS_ACCOUNT: ${{ secrets.RSP_AWS_ACCOUNT }}
       AWS_REGION: ${{ secrets.RSP_AWS_REGION }}
       BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
