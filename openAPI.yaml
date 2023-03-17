@@ -1,0 +1,287 @@
+openapi: "3.0.1"
+info:
+  title: "rsp-nonprod-apis-payments"
+  description: "API Gateway for RSP APIS PAYMENTS NONPROD environment"
+  version: '1'
+servers:
+- url: "https://nonprod.pay-roadside-fine.service.gov.uk"
+paths:
+  /payments/{id}:
+    get:
+      summary: "Get payment by ID"
+      parameters:
+      - name: "id"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
+        example: "1234567890123_FPN"
+      responses:
+        '200':
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/payment'
+      security:
+      - sigv4: []
+    put:
+      summary: "Update payment by ID"
+      description: "This method is used for updating payments from PAID to UNPAID, and vice versa. It is not possible to update payment details without switching the payment status."
+      parameters:
+      - name: "id"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
+        example: "1234567890123_FPN"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/paymentPost'
+      responses:
+        '200':
+          description: "Success"
+      security:
+      - sigv4: []
+    delete:
+      summary: "Delete payment by ID"
+      parameters:
+      - name: "id"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
+        example: "1234567890123_FPN"
+      responses:
+        '200':
+          description: "Success"
+      security:
+      - sigv4: []
+  /payments/batches:
+    post:
+      summary: "Get multiple payments"
+      security:
+      - sigv4: []
+      requestBody:
+        description: "ids array should be populated with requested payment IDs"
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ids:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/multiplePayments'
+  /payments:
+    get:
+      summary: "List all payments in database"
+      security:
+      - sigv4: []
+      responses:
+        '200':
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/multiplePayments'
+            
+    post:
+      summary: "Create new payment in database"
+      security:
+      - sigv4: []
+      requestBody:
+        description: "NOTE: PenaltyReference and PenaltyType are joined together in database to form PenaltyID"
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/paymentPost'
+      responses:
+        '200':
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/payment'
+  /groupPayments:
+    post:
+      summary: "Create new group payment in database"
+      security:
+      - sigv4: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/groupPaymentPost'
+      responses:
+        '201':
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/groupPayment'
+  /groupPayments/{id}:
+    get:
+      summary: "Get group payment by ID"
+      parameters:
+      - name: "id"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
+        example: "12345abcdef"
+      responses:
+        '200':
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/groupPayment'
+      security:
+      - sigv4: []
+  /groupPayments/{id}/{penaltyType}:
+    delete:
+      summary: "Delete individual payments from group by penalty type"
+      parameters:
+      - name: "id"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
+        example: "12345abcdef"
+      - name: "penaltyType"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
+        example: "FPN"
+      responses:
+        '200':
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/groupPayment'
+      security:
+      - sigv4: []
+components:
+  securitySchemes:
+    sigv4:
+      type: "apiKey"
+      name: "Authorization"
+      in: "header"
+      x-amazon-apigateway-authtype: "awsSigv4"
+  schemas:
+    paymentPost:
+      type: object
+      properties:
+        PenaltyStatus:
+          type: string
+        PenaltyReference:
+          type: string
+        PenaltyType:
+          type: string
+        PaymentDetail:
+          type: object
+          properties:
+            PaymentMethod:
+              type: string
+            PaymentRef:
+              type: string
+            AuthCode:
+              type: string
+            PaymentAmount:
+              type: number
+            PaymentDate:
+              type: number
+    payment:
+      type: object
+      properties:
+        payment:
+          type: object
+          properties:
+            PenaltyGroupID:
+              type: string
+            PenaltyStatus:
+              type: string
+            ID:
+              type: string
+            PaymentDetail:
+              type: object
+              properties:
+                PaymentMethod:
+                  type: string
+                PaymentRef:
+                  type: string
+                AuthCode:
+                  type: string
+                PaymentAmount:
+                  type: number
+                PaymentDate:
+                  type: number
+    multiplePayments:
+      type: object
+      properties:
+        payments:
+          type: array
+          items:
+            $ref: '#/components/schemas/payment'
+    groupPayment:
+      type: object
+      properties:
+        ID:
+          type: string
+        Payments:
+          type: object
+          properties:
+            FPN:
+              $ref: '#/components/schemas/groupPaymentPayment'
+            IM:
+              $ref: '#/components/schemas/groupPaymentPayment'
+            CDN:
+              $ref: '#/components/schemas/groupPaymentPayment'
+    groupPaymentPayment:
+      type: object
+      properties:
+        AuthCode:
+          type: string
+        PaymentDate:
+          type: number
+        PaymentMethod:
+          type: string
+        PaymentRef:
+          type: string
+        penaltyIds:
+          type: array
+          items:
+            type: string
+        PaymentAmount:
+          type: number
+        PaymentStatus:
+          type: string
+    groupPaymentPost:
+      type: object
+      properties:
+        PaymentCode:
+          type: string
+        PenaltyType:
+          type: string
+        PaymentDetail:
+          $ref: '#/components/schemas/groupPaymentPayment'
+        PenaltyIds:
+          type: array
+          items:
+            type: string
