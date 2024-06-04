@@ -8,9 +8,13 @@ on:
 jobs:
   lint:
     uses: dvsa/.github/.github/workflows/nodejs-lint.yaml@v4.0.1
+    with:
+      node-version: 20.x
 
   test:
     uses: dvsa/.github/.github/workflows/nodejs-test.yaml@v4.0.1
+    with:
+      node-version: 20.x
 
   security:
     uses: dvsa/.github/.github/workflows/nodejs-security.yaml@v4.0.1
@@ -46,6 +50,7 @@ jobs:
     with:
       upload-artifact: true
       build-command: npm run build:prod
+      node-version: 20.x
 
   upload-s3:
     if: startsWith(github.ref, 'refs/heads/feat/') || startsWith(github.ref, 'refs/heads/feature/') || startsWith(github.ref, 'refs/heads/fix/') || startsWith(github.ref, 'refs/heads/master')
