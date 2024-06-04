@@ -48,7 +48,7 @@
     "@babel/preset-env": "^7.20.2",
     "@babel/register": "^7.21.0",
     "archiver": "^5.3.1",
-    "aws-sam-webpack-plugin": "^0.13.0",
+    "aws-sam-webpack-plugin": "^0.14.0",
     "babel-loader": "^9.1.2",
     "copyfiles": "^2.4.1",
     "eslint": "^8.35.0",
@@ -69,6 +69,7 @@
     "sinon": "^15.0.1",
     "supertest": "^6.3.3",
     "wait-on": "^7.0.1",
+    "webpack": "^5.91.0",
     "webpack-cli": "^5.1.4",
     "webpack-merge": "^5.8.0"
   },
@@ -77,7 +78,6 @@
     "aws-sdk": "^2.1331.0",
     "joi": "^17.8.3",
     "serverless-dynamodb-client": "0.0.2",
-    "uuid": "^9.0.0",
-    "webpack": "^5.91.0"
+    "uuid": "^9.0.0"
   }
 }
