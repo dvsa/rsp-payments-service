@@ -40,7 +40,7 @@ module.exports = {
 					loader: 'babel-loader',
 					options: {
 						presets: [
-							['@babel/preset-env', { targets: { node: '16.16.0' }, useBuiltIns: 'entry', corejs: '3' }],
+							['@babel/preset-env', { targets: { node: '20.x' }, useBuiltIns: 'entry', corejs: '3' }],
 						],
 					},
 				},

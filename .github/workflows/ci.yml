@@ -7,17 +7,13 @@ on:
 
 jobs:
   lint:
-    uses: dvsa/.github/.github/workflows/nodejs-lint.yaml@v3.5.0
-    with:
-      node-version: 20.x
+    uses: dvsa/.github/.github/workflows/nodejs-lint.yaml@v4.0.1
 
   test:
-    uses: dvsa/.github/.github/workflows/nodejs-test.yaml@v3.5.0
-    with:
-      node-version: 20.x
+    uses: dvsa/.github/.github/workflows/nodejs-test.yaml@v4.0.1
 
   security:
-    uses: dvsa/.github/.github/workflows/nodejs-security.yaml@v3.5.0
+    uses: dvsa/.github/.github/workflows/nodejs-security.yaml@v4.0.1
     with:
       args: --all-projects
     secrets:
@@ -45,16 +41,15 @@ jobs:
           echo "MATRIX=$(jq -c . < ./lambdas.json)" >> $GITHUB_OUTPUT
 
   build:
-    uses: dvsa/.github/.github/workflows/nodejs-build.yaml@v3.5.0
+    uses: dvsa/.github/.github/workflows/nodejs-build.yaml@v4.0.1
     needs: [ build-names ]
     with:
       upload-artifact: true
       build-command: npm run build:prod
-      node-version: 20.x
 
   upload-s3:
     if: startsWith(github.ref, 'refs/heads/feat/') || startsWith(github.ref, 'refs/heads/feature/') || startsWith(github.ref, 'refs/heads/fix/') || startsWith(github.ref, 'refs/heads/master')
-    uses: dvsa/.github/.github/workflows/upload-to-s3.yaml@v3.1.0
+    uses: dvsa/.github/.github/workflows/upload-to-s3.yaml@v4.0.1
     needs: [ lint, test, build, build-names ]
     strategy:
       matrix:
@@ -75,7 +70,7 @@ jobs:
 
   update-lambda-code:
     if: ${{ github.ref_name == github.event.repository.default_branch }}
-    uses: dvsa/.github/.github/workflows/update-lambda-function.yaml@v3.1.0
+    uses: dvsa/.github/.github/workflows/update-lambda-function.yaml@v4.0.1
     needs: [ build-names, build, upload-s3 ]
     strategy:
       matrix:
