@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.1.2](https://github.com/dvsa/rsp-payments-service/compare/v3.1.0...v3.1.2) (2024-08-16)
+
+
+### Miscellaneous Chores
+
+* release 3.1.2 ([56ff72c](https://github.com/dvsa/rsp-payments-service/commit/56ff72cbcc786bf7331283b44f8766af519b904c))
+
 ## [3.1.0](https://github.com/dvsa/rsp-payments-service/compare/v3.0.2...v3.1.0) (2023-03-13)
 
 
