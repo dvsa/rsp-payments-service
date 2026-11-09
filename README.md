@@ -73,6 +73,10 @@ configuration. Only the local `offline` command bypasses authorization with
 `--noAuth`. Do not expose local services to an untrusted network; DynamoDB Local
 may listen beyond loopback.
 
+Offline reloads handlers for each request. This prevents Offline 13 reusing a
+terminated worker after the known PUT timeout and makes repeated contract runs
+reliable. It is a local emulation setting, not a production handler fix.
+
 The launcher refuses occupied ports instead of stopping their owners. After
 `Server ready`, inspect actual seeded records:
 
@@ -135,12 +139,14 @@ These commands require no `.env`, AWS login, database or API:
 npm test
 npm run test:coverage
 npm run test:local-tooling
+npm run test:integration:tooling
 npm run lint
+npm run lint:integration
 npm run build:prod
 ```
 
 The unit bootstrap installs synthetic credentials before importing application
-modules, blocks HTTP/HTTPS and unexpected SDK requests, and restores Sinon stubs
+modules, blocks HTTP/HTTPS/native fetch and unexpected SDK requests, and restores Sinon stubs
 after each test. Tests exercise real validation, database request shapes,
 conditional writes, Lambda envelopes, handler boundaries and existing defects.
 
@@ -159,14 +165,49 @@ Verified locally on Node 20.20.2:
 
 | Check | Result |
 | --- | --- |
-| Isolated unit suite | 84 passed, including standalone/group creation shapes and linked seed-record consistency |
+| Isolated unit suite | 92 passed, including fixture contracts, network isolation and existing-defect characterisation |
 | Source coverage | 99.59% statements, 98.48% branches, 100% functions, 99.58% lines; 95% per-file gate passed |
 | Startup/transport safety tests | 10 passed, including localhost binding |
-| Authenticated local startup | Verified via `/dev` GETs before the fixture refresh; restart to load the updated eight-payment seed |
+| Integration-tooling safety tests | 24 passed, covering target/ownership/race guards, cleanup, runner outcomes and reports |
+| Authorised manual API baseline | 35 passed across all nine routes in `rspnonprod`; known-defect cases are explicitly labelled |
+| Default API subset | 14 passed, 16 skipped, five not-run; intentional nonzero exit for incomplete AWS-gated coverage |
+| Authenticated local startup | Verified eight payment/two group seed bodies; repeated runs verified with fresh local workers |
 | Shutdown | Ctrl-C stopped the watcher, Offline and DynamoDB; task-owned ports were released |
-| Lint and production build | Passed; all nine ZIPs validated and handler exports loaded without invoking them |
+| Source and integration lint | Passed |
+| Production build (earlier baseline verification) | All nine ZIPs validated and handler exports loaded without invoking them |
 
-### Manual integrations and remaining work
+### Manual contract baseline
+
+After starting the service in the first terminal, run the recommended portable
+baseline in a second terminal:
+
+```sh
+npm run test:integration:local
+npm run test:integration:report:open
+```
+
+The 35 scenarios inventory all nine exports/routes and verify exact responses,
+independent GET/database read-backs, individual/group transitions, rejection
+side effects and fixture restoration. Default execution seeds/restores only
+reserved local fixtures and skips AWS-capable routes; skipped coverage produces
+a nonzero exit. Existing Bruno fixtures are preserved.
+
+For the complete baseline, first authenticate and obtain explicit approval for
+the configured non-production downstream Lambda effects:
+
+```sh
+INTEGRATION_ALLOW_LAMBDA=yes npm run test:integration:local
+```
+
+Every run generates escaped, self-contained HTML and machine-readable JSON in
+ignored `integration-reports/`, including setup failures. The new suite's actual
+API execution results must be read from those reports; offline tooling checks
+are not a successful API run. See [the integration guide](integration/README.md)
+for complete contracts, first-run steps, seed/reset commands, credential refresh,
+owned-fixture recovery and coverage limitations. Do not persist the approval
+flag unless future runs in that environment are also authorised.
+
+### Legacy manual integrations
 
 `npm run test-i` and `npm run integration` use the existing service integration
 tests. They mutate seeded local records and invoke real document-update Lambdas.
@@ -179,24 +220,28 @@ terminal:
 INTEGRATION_ALLOW_LAMBDA=yes npm run test-i
 ```
 
-The legacy tests depend on their execution order and include destructive fixture checks; they
-do not provide automatic snapshot restoration, comprehensive black-box coverage
-or an HTML report. Restart the in-memory service afterwards. A full portable
-integration/Bruno baseline with owned fixtures and restoration remains future
-work. Unit coverage and database-only startup reads do not verify real downstream
-document updates.
+The nine legacy tests previously passed in an authorised non-production run.
+They depend on execution order and include destructive fixture checks, without
+snapshot restoration or HTML reporting. Prefer the new owned-fixture baseline;
+restart the in-memory service after legacy tests. Neither suite independently
+verifies downstream document state.
 
 ### Existing defects and operational limits
 
 - Individual updates return 200 with `{}` before the DynamoDB promise settles;
   asynchronous write failures escape the existing catch. Synchronous failures
-  still return the existing 500 response.
+  still return the existing 500 response at service level. The exported PUT
+  handler is non-async and never calls its callback: locally both valid and
+  invalid requests actually return an empty HTTP 504. This accepted known-defect
+  baseline checks both the exact timeout and the persisted/no-write outcome.
 - The group-creation handler catches synchronous exceptions, not rejected service
   promises. Malformed JSON also escapes some existing handler error blocks.
 - Missing individual payments return 200 with `{}`; missing groups return 404.
-  Individual validation failures return 405.
+  Individual creation validation failures return 405.
 - Persistence and downstream Lambda invocations are not transactional. A
   downstream failure can be reported after a local write/deletion.
+- Lambda `FunctionError` responses can still yield successful payment/group
+  responses; isolated tests explicitly preserve this limitation.
 - Creation stores only ID, status and payment details. Paid deletion can send
   string `"undefined"` for missing document metadata.
 - Group deletion can log member-cleanup failures and still return success.
@@ -204,8 +249,8 @@ document updates.
 - The legacy OpenAPI plugin emits Serverless 3 validation warnings for its
   `documentation` extension. This does not justify disabling validation or
   changing application contracts.
-- No remote CI, real downstream integration, security scan or deployment is
-  implied by local checks. Existing workflows can upload feature-branch
+- No remote CI, independent downstream document-state verification, security
+  scan or deployment is implied by these checks. Existing workflows can upload feature-branch
   artifacts and update non-production Lambdas from the default branch.
 
 Keep dependency/security remediation in the later supported-runtime stage. Run

@@ -3,6 +3,7 @@ import sinon from 'sinon';
 import AWS from 'aws-sdk';
 import Payments from './payments';
 import seededPayments from '../../mock-data/fake-payments.json';
+import { fixtures, payload } from '../../integration/fixtures.cjs';
 
 const id = '999999000001_FPN';
 const paymentDetail = {
@@ -73,11 +74,28 @@ describe('Payments service', () => {
 		expect(db.scan.firstCall.args).toEqual([{ TableName: 'paymentsTable' }]);
 	});
 
+	it('accepts the reserved FPN, IM and CDN integration fixtures with their exact creation shapes', async () => {
+		succeeds('put', {});
+		invoke.returns({ promise: sinon.stub().resolves({}) });
+		await Promise.all(Object.values(fixtures(1700000000).created).map(async (payment) => {
+			const response = await service.create(payload(payment));
+			expect(response.statusCode).toBe(200);
+			expect(bodyOf(response)).toEqual({ payment });
+			expect(db.put.calledWithExactly({ TableName: 'paymentsTable', Item: payment })).toBe(true);
+		}));
+	});
+
 	it('returns a database failure from list', async () => {
 		fails('scan', { code: 'Unavailable' });
 		const response = await service.list();
 		expect(response.statusCode).toBe(500);
 		expect(bodyOf(response)).toEqual({ err: { code: 'Unavailable' } });
+	});
+
+	it('characterises scan pagination being omitted from the public list response', async () => {
+		succeeds('scan', { Items: [{ ID: id }], LastEvaluatedKey: { ID: id } });
+		expect(bodyOf(await service.list())).toEqual({ payments: [{ ID: id }] });
+		expect(db.scan.calledOnce).toBe(true);
 	});
 
 	it('fetches the exact requested payment', async () => {
@@ -120,6 +138,11 @@ describe('Payments service', () => {
 		const response = await service.batchFetch([id]);
 		expect(response.statusCode).toBe(500);
 		expect(bodyOf(response).err.code).toBe('Unavailable');
+	});
+
+	it('characterises a missing batch ID list rejecting before database access', async () => {
+		await expect(service.batchFetch()).rejects.toThrow(TypeError);
+		expect(db.batchGet.called).toBe(false);
 	});
 
 	[
@@ -186,6 +209,19 @@ describe('Payments service', () => {
 		expect(bodyOf(response)).toEqual({});
 	});
 
+	it('characterises Lambda FunctionError not preventing a successful creation response', async () => {
+		succeeds('put', {});
+		invoke.returns({
+			promise: sinon.stub().resolves({
+				StatusCode: 200, FunctionError: 'Unhandled', Payload: '{"errorMessage":"Synthetic failure"}',
+			}),
+		});
+		const response = await service.create(paidBody());
+		expect(response.statusCode).toBe(200);
+		expect(bodyOf(response)).toEqual({ payment: { ID: id, PenaltyStatus: 'PAID', PaymentDetail: paymentDetail } });
+		expect(db.put.calledOnce).toBe(true);
+	});
+
 	it('deletes only an individual payment without updating Documents', async () => {
 		succeeds('delete', { Attributes: { ID: id } });
 		expect(await service.deletePaymentOnly(id)).toEqual({ Attributes: { ID: id } });
@@ -213,6 +249,12 @@ describe('Payments service', () => {
 		expect(response.statusCode).toBe(200);
 		expect(bodyOf(response)).toEqual({});
 		expect(db.delete.firstCall.args[0].ReturnValues).toBe('ALL_OLD');
+		expect(invoke.called).toBe(false);
+	});
+
+	it('characterises missing individual deletion rejecting instead of returning a controlled 404', async () => {
+		succeeds('delete', {});
+		await expect(service.delete(id)).rejects.toThrow(TypeError);
 		expect(invoke.called).toBe(false);
 	});
 

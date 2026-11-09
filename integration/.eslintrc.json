@@ -1,0 +1,15 @@
+{
+  "env": { "node": true, "es2022": true },
+  "parserOptions": { "ecmaVersion": 2022 },
+  "rules": {
+    "import/extensions": "off",
+    "import/no-unresolved": ["error", { "ignore": ["^node:"] }],
+    "no-await-in-loop": "off",
+    "no-restricted-syntax": ["error", "ForInStatement", "LabeledStatement", "WithStatement"],
+    "no-continue": "off"
+  },
+  "overrides": [
+    { "files": ["local-store.cjs", "run.cjs"], "rules": { "global-require": "off" } },
+    { "files": ["run.cjs"], "rules": { "no-console": ["error", { "allow": ["log", "error"] }] } }
+  ]
+}

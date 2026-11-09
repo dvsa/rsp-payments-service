@@ -31,6 +31,10 @@ for (const transport of [http, https]) {
 	}
 }
 
+global.fetch = () => {
+	throw new Error('Unexpected network request in unit tests');
+};
+
 const AWS = require('aws-sdk');
 AWS.Service.prototype.makeRequest = () => {
 	throw new Error('Unexpected AWS request in unit tests');

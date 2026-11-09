@@ -206,6 +206,22 @@ describe('GroupPayments service', () => {
 		expect(db.put.calledOnce).toBe(true);
 	});
 
+	it('characterises Lambda FunctionError not preventing successful group and member creation', async () => {
+		succeeds('get');
+		succeeds('put');
+		succeeds('batchWrite');
+		invoke.returns({
+			promise: sinon.stub().resolves({
+				StatusCode: 200, FunctionError: 'Unhandled', Payload: '{"errorMessage":"Synthetic failure"}',
+			}),
+		});
+		const response = await service.createPenaltyGroupPaymentRecord(input());
+		expect(response.statusCode).toBe(201);
+		expect(bodyOf(response)).toEqual(stored());
+		expect(db.put.calledOnce).toBe(true);
+		expect(db.batchWrite.calledOnce).toBe(true);
+	});
+
 	it('reports a member batch-write failure', async () => {
 		succeeds('get');
 		succeeds('put');
