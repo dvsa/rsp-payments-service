@@ -3,8 +3,14 @@ import expect from 'expect';
 
 import payments from '../../mock-data/fake-payments.json';
 
-const url = 'http://localhost:3000/payments';
+const url = 'http://localhost:3000/dev/payments';
 const request = supertest(url);
+const expectedPaymentIds = [
+	...payments.map((payment) => payment.ID),
+	'111111111111_FPN',
+	'222222222222_FPN',
+	'333333333333_IM',
+];
 
 describe('payments', () => {
 
@@ -22,7 +28,8 @@ describe('payments', () => {
 					.expect('Content-Type', 'application/json; charset=utf-8')
 					.end((err, res) => {
 						if (err) throw err;
-						expect(res.body.payments.length).toEqual(7);
+						expect(res.body.payments.map((payment) => payment.ID).sort())
+							.toEqual([...expectedPaymentIds].sort());
 						done();
 					});
 
@@ -70,7 +77,8 @@ describe('payments', () => {
 						.set('authorization', 'allow')
 						.end((_err, _res) => {
 							if (_err) throw _err;
-							expect(_res.body.payments.length).toEqual(6);
+							expect(_res.body.payments.map((payment) => payment.ID).sort())
+								.toEqual(expectedPaymentIds.filter((id) => id !== '820500000877_FPN').sort());
 							done();
 						});
 				});

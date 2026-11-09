@@ -5,15 +5,24 @@
         "PaymentRef": "REF12345",
         "AuthCode": "1234TBD",
         "PaymentAmount": 800,
-        "PaymentDate": 1519300376667,
-        "PaymentStatus": "UNPAID"
+        "PaymentDate": 1700000000,
+        "PaymentMethod": "CARD",
+        "PaymentStatus": "PAID",
+        "penaltyIds": [
+          "820500000881_FPN",
+          "820500000882_FPN"
+        ]
       },
       "IM": {
         "PaymentRef": "RJF12345",
         "AuthCode": "1234TBG",
         "PaymentAmount": 80,
-        "PaymentDate": 1519300376667,
-        "PaymentStatus": "PAID"
+        "PaymentDate": 1700000000,
+        "PaymentMethod": "CARD",
+        "PaymentStatus": "PAID",
+        "penaltyIds": [
+          "0000011123456_IM"
+        ]
       }
     }
   },
@@ -24,8 +33,12 @@
         "PaymentRef": "RGF12345",
         "AuthCode": "1234AAA",
         "PaymentAmount": 80,
-        "PaymentDate": 1519300376667,
-        "PaymentStatus": "UNPAID"
+        "PaymentDate": 1700000000,
+        "PaymentMethod": "CARD",
+        "PaymentStatus": "PAID",
+        "penaltyIds": [
+          "820500000883_FPN"
+        ]
       }
     }
   }

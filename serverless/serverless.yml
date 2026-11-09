@@ -37,6 +37,7 @@ custom:
     start:
       port: 8000
       inMemory: true
+      sharedDb: true
       migrate: true
       seed: true
     stages:
@@ -50,12 +51,14 @@ custom:
           -
             table: groupPaymentsTable
             sources: [./mock-data/fake-group-payments.json]
+  serverless-offline:
+    host: localhost
 
 plugins:
-  - serverless-dynamodb-local
+  - serverless-dotenv-plugin
+  - serverless-dynamodb
   - serverless-offline
   - serverless-openapi-documentation
-  - serverless-dotenv-plugin
 provider:
   name: aws
   runtime: nodejs20.x
@@ -68,7 +71,7 @@ functions:
     memorySize: 128
     events:
       -
-        httpApi:
+        http:
           path: payments
           method: get
           authorizer:
@@ -97,7 +100,7 @@ functions:
     memorySize: 128
     events:
       -
-        httpApi:
+        http:
           path: payments/{id}
           method: get
           authorizer:
@@ -137,7 +140,7 @@ functions:
     memorySize: 128
     events:
       -
-        httpApi:
+        http:
           path: groupPayments/{id}
           method: get
           authorizer:
@@ -177,7 +180,7 @@ functions:
     memorySize: 128
     events:
       -
-        httpApi:
+        http:
           path: groupPayments/{id}/{penaltyType}
           method: delete
           authorizer:
@@ -186,7 +189,7 @@ functions:
           documentation:
             summary: "Delete payment details for a penalty group"
             description: "Updates a penalty group and child documents to reflect payment deletion"
-            pathParmas:
+            pathParams:
               - name: "id"
                 description: "The penalty-group-payment id"
                 schema:
@@ -197,23 +200,23 @@ functions:
                 schema:
                   type: "string"
                   pattern: "^[0-9]+$"
-          methodResponses:
-            - statusCode: 200
-              responseBody:
-                description: "Details of the updated payment group"
-              responseModels:
-                application/json: "PaymentsResponse"
-            - statusCode: 501
-              responseBody:
-                descriptions: "501 not implemented"
-              responseModels:
-                application/json: "ErrorResponse"
+            methodResponses:
+              - statusCode: 200
+                responseBody:
+                  description: "Details of the updated payment group"
+                responseModels:
+                  application/json: "PaymentsResponse"
+              - statusCode: 501
+                responseBody:
+                  description: "501 not implemented"
+                responseModels:
+                  application/json: "ErrorResponse"
   create:
     handler: handler.create
     memorySize: 128
     events:
       -
-        httpApi:
+        http:
           path: payments
           method: post
           authorizer:
@@ -242,7 +245,7 @@ functions:
     memorySize: 128
     events:
       -
-        httpApi:
+        http:
           path: groupPayments
           method: post
           authorizer:
@@ -269,7 +272,7 @@ functions:
     memorySize: 128
     events:
       -
-        httpApi:
+        http:
           path: payments/batches
           method: post
           authorizer:
@@ -298,7 +301,7 @@ functions:
     memorySize: 128
     events:
       -
-        httpApi:
+        http:
           path: payments/{id}
           method: delete
           authorizer:
@@ -333,7 +336,7 @@ functions:
     memorySize: 128
     events:
       -
-        httpApi:
+        http:
           path: payments/{id}
           method: put
           authorizer:

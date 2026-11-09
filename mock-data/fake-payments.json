@@ -1,40 +1,82 @@
 [
     {
       "ID": "820500000877_FPN",
-      "Status": "PAID",
-      "PenaltyAmount": 200,
-      "PenaltyType": "FPN",
-      "Payment" : {
+      "PenaltyStatus": "PAID",
+      "PaymentDetail": {
         "PaymentRef": "12345678",
-        "ConfirmationCode": "A8B9C0A0FF",
         "AuthCode": "ABC123DEF",
-        "PaymentAmount": 200
+        "PaymentAmount": 200,
+        "PaymentDate": 1700000000,
+        "PaymentMethod": "CARD"
       }
     },
     {
       "ID": "820500000878_FPN",
-      "Status": "PAID",
-      "PenaltyAmount": 450,
-      "PenaltyType": "FPN",
-      "Payment" : {
+      "PenaltyStatus": "PAID",
+      "PaymentDetail": {
         "PaymentRef": "12345670",
-        "ConfirmationCode": "A8BBC0A0FE",
         "AuthCode": "ABC123DFF",
-        "PaymentAmount": 450
+        "PaymentAmount": 450,
+        "PaymentDate": 1700000000,
+        "PaymentMethod": "CARD"
       }
     },
     {
       "ID": "820500000879_FPN",
-      "Status": "UNPAID",
-      "PenaltyAmount": 150,
-      "PenaltyType": "FPN",
-      "Payment": {}
+      "PenaltyStatus": "UNPAID",
+      "PaymentDetail": {}
     },
     {
       "ID": "820500000880_FPN",
-      "Status": "UNPAID",
-      "PenaltyAmount": 375,
-      "PenaltyType": "FPN",
-      "Payment": {}
+      "PenaltyStatus": "UNPAID",
+      "PaymentDetail": {}
+    },
+    {
+      "ID": "820500000881_FPN",
+      "PenaltyStatus": "PAID",
+      "PaymentDetail": {
+        "PaymentRef": "REF12345",
+        "AuthCode": "1234TBD",
+        "PaymentAmount": 800,
+        "PaymentDate": 1700000000,
+        "PaymentMethod": "CARD"
+      },
+      "PenaltyGroupId": "15xk9i0xujgg"
+    },
+    {
+      "ID": "820500000882_FPN",
+      "PenaltyStatus": "PAID",
+      "PaymentDetail": {
+        "PaymentRef": "REF12345",
+        "AuthCode": "1234TBD",
+        "PaymentAmount": 800,
+        "PaymentDate": 1700000000,
+        "PaymentMethod": "CARD"
+      },
+      "PenaltyGroupId": "15xk9i0xujgg"
+    },
+    {
+      "ID": "0000011123456_IM",
+      "PenaltyStatus": "PAID",
+      "PaymentDetail": {
+        "PaymentRef": "RJF12345",
+        "AuthCode": "1234TBG",
+        "PaymentAmount": 80,
+        "PaymentDate": 1700000000,
+        "PaymentMethod": "CARD"
+      },
+      "PenaltyGroupId": "15xk9i0xujgg"
+    },
+    {
+      "ID": "820500000883_FPN",
+      "PenaltyStatus": "PAID",
+      "PaymentDetail": {
+        "PaymentRef": "RGF12345",
+        "AuthCode": "1234AAA",
+        "PaymentAmount": 80,
+        "PaymentDate": 1700000000,
+        "PaymentMethod": "CARD"
+      },
+      "PenaltyGroupId": "15xef9lt3bhc"
     }
 ]
