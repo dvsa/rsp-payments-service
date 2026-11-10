@@ -39,6 +39,18 @@
         "penaltyIds": [
           "820500000883_FPN"
         ]
+      },
+      "CDN": {
+        "PaymentRef": "RGF-CDN-LOCAL",
+        "AuthCode": "LOCALCDN",
+        "PaymentAmount": 160,
+        "PaymentDate": 1700000000,
+        "PaymentMethod": "CARD",
+        "PaymentStatus": "PAID",
+        "penaltyIds": [
+          "820500000884_CDN",
+          "820500000885_CDN"
+        ]
       }
     }
   }
