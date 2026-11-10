@@ -78,5 +78,29 @@
         "PaymentMethod": "CARD"
       },
       "PenaltyGroupId": "15xef9lt3bhc"
+    },
+    {
+      "ID": "820500000884_CDN",
+      "PenaltyStatus": "PAID",
+      "PaymentDetail": {
+        "PaymentRef": "RGF-CDN-LOCAL",
+        "AuthCode": "LOCALCDN",
+        "PaymentAmount": 160,
+        "PaymentDate": 1700000000,
+        "PaymentMethod": "CARD"
+      },
+      "PenaltyGroupId": "15xef9lt3bhc"
+    },
+    {
+      "ID": "820500000885_CDN",
+      "PenaltyStatus": "PAID",
+      "PaymentDetail": {
+        "PaymentRef": "RGF-CDN-LOCAL",
+        "AuthCode": "LOCALCDN",
+        "PaymentAmount": 160,
+        "PaymentDate": 1700000000,
+        "PaymentMethod": "CARD"
+      },
+      "PenaltyGroupId": "15xef9lt3bhc"
     }
 ]

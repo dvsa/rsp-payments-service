@@ -6,12 +6,13 @@
   "author": "",
   "license": "MIT",
   "engines": {
-    "node": "20.x"
+    "node": "24.x",
+    "npm": "11.x"
   },
   "scripts": {
-    "start": "node --env-file=.env scripts/start-local.cjs",
-    "start:local": "npm run copy-localfiles && npm run compile && npm run parallel",
-    "setup:local": "npm run copy-localfiles && cd build && node --no-experimental-require-module ../node_modules/serverless/scripts/serverless.js dynamodb install",
+    "start": "npm run copy-localfiles && npm run compile && npm run parallel",
+    "start:local": "npm start",
+    "setup:local": "npm run copy-localfiles && cd build && node ../node_modules/serverless/bin/serverless.js dynamodb install",
     "test:coverage": "BABEL_ENV=coverage nyc npm test",
     "test:local-tooling": "node --test test/local-tooling.test.cjs",
     "test:integration:local": "node integration/run.cjs",
@@ -23,8 +24,8 @@
     "lint:integration": "eslint --ext .cjs integration",
     "parallel": "./node_modules/.bin/run-p watch offline",
     "presetup": "npm run copy-localfiles",
-    "offline": "cd ./build && sls offline start --noAuth",
-    "offline-with-auth": "cd ./build && sls offline start",
+    "offline": "cd ./build && DYNAMODB_PAYMENTS_TABLE=paymentsTable DYNAMODB_GROUP_PAYMENTS_TABLE=groupPaymentsTable node --env-file=.env ../node_modules/serverless/bin/serverless.js offline start --noAuth",
+    "offline-with-auth": "cd ./build && DYNAMODB_PAYMENTS_TABLE=paymentsTable DYNAMODB_GROUP_PAYMENTS_TABLE=groupPaymentsTable node --env-file=.env ../node_modules/serverless/bin/serverless.js offline start",
     "lint": "./node_modules/.bin/eslint src",
     "lint:fix": "./node_modules/.bin/eslint src --fix",
     "watch": "./node_modules/.bin/nodemon --watch src --exec npm run compile",
@@ -39,15 +40,15 @@
     "copy-sls": "./node_modules/.bin/copyfiles -f serverless/*.yml build",
     "copy-mockdata": "./node_modules/.bin/copyfiles mock-data/*.json build",
     "copy-models": "./node_modules/.bin/copyfiles -f src/models/*.json build/models",
-    "copy-package": "./node_modules/.bin/copyfiles package.json build/",
+    "copy-package": "./node_modules/.bin/copyfiles package.json package-lock.json build/",
     "copy-openapi": "./node_modules/.bin/copyfiles openapiReplace.js build/",
     "deploy-AWS": "npm run copy-package && npm run copy-sls && cd ./build && npm install --production && sls deploy",
     "openapireplace": "node openapiReplace.js",
     "start-build": "rm -rf build && npm run copy-localfiles && npm run compile && npm run copy-package && npm run build-node-modules && npm run post-build-cleanup && npm run build-artifact && rm -f build/serverless.yml",
-    "build-node-modules": "cd build && npm install --production",
+    "build-node-modules": "cd build && npm ci --omit=dev --ignore-scripts --no-audit --no-fund",
     "build-artifact": "cd build && rm -rf artifacts && pwd && sls package --package artifacts",
-    "build-openApi": "cd build && sls openapi generate -f json && npm run openapireplace",
-    "post-build-cleanup": "rm -rf build/mock-data && rm -f build/package.json && rm -f build/openApiReplace.js && rm -f build/package-lock.json",
+    "build-openApi": "npm run compile && npm run copy-localfiles && cd build && sls openapi generate -f json && node openapiReplace.js",
+    "post-build-cleanup": "rm -rf build/mock-data && rm -f build/package.json && rm -f build/openapiReplace.js && rm -f build/package-lock.json",
     "prepush": "npm run lint && npm test && npm run check-security && npm run check-security-log",
     "check-security": "git secrets --scan",
     "check-security-log": "git log -p | scanrepo",
@@ -59,7 +60,6 @@
     "@babel/preset-env": "^7.20.2",
     "@babel/register": "^7.21.0",
     "archiver": "^5.3.1",
-    "aws-sam-webpack-plugin": "^0.14.0",
     "babel-loader": "^9.1.2",
     "babel-plugin-istanbul": "^7.0.0",
     "copyfiles": "^2.4.1",
@@ -68,18 +68,17 @@
     "eslint-plugin-import": "^2.27.5",
     "expect": "^29.5.0",
     "fs-extra": "^11.1.0",
-    "mocha": "^10.2.0",
-    "js-yaml": "^4.1.0",
+    "mocha": "^12.0.3",
+    "js-yaml": "^4.3.2",
     "nodemon": "^3.1.4",
     "npm-run-all": "^4.1.5",
-    "nyc": "^17.1.0",
-    "replace": "^1.2.2",
-    "rimraf": "^4.4.0",
-    "serverless": "^3.28.1",
-    "serverless-dotenv-plugin": "^4.0.2",
+    "nyc": "^18.0.0",
+    "osls": "^4.4.0",
+    "serverless": "npm:osls@^4.4.0",
+    "serverless-dotenv-plugin": "^6.0.0",
     "serverless-dynamodb": "^0.2.58",
-    "serverless-offline": "^13.10.2",
-    "serverless-openapi-documentation": "^0.4.0",
+    "serverless-offline": "^14.8.4",
+    "serverless-openapi-documenter": "^0.1.7",
     "sinon": "^15.0.1",
     "supertest": "^6.3.3",
     "wait-on": "^7.0.1",
@@ -89,9 +88,25 @@
   },
   "dependencies": {
     "@dvsa/rsp-validation": "^4.0.0",
-    "aws-sdk": "^2.1331.0",
+    "@aws-sdk/client-dynamodb": "^3.1165.0",
+    "@aws-sdk/client-lambda": "^3.1165.0",
+    "@aws-sdk/lib-dynamodb": "^3.1165.0",
     "joi": "^17.8.3",
-    "serverless-dynamodb-client": "0.0.2",
-    "uuid": "^9.0.0"
+    "uuid": "^11.1.1"
+  },
+  "overrides": {
+    "serverless": "$serverless",
+    "js-yaml@>=4.0.0 <5.0.0": "$js-yaml",
+    "serverless-openapi-documenter": {
+      "@usebruno/converters": {
+        "nanoid": "^3.3.18",
+        "@usebruno/schema": {
+          "nanoid": "^3.3.18"
+        }
+      },
+      "openapi-to-postmanv2": {
+        "yaml": "^1.10.3"
+      }
+    }
   }
 }

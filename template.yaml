@@ -3,44 +3,52 @@ Transform: 'AWS::Serverless-2016-10-31'
 
 Globals:
   Function:
-    Runtime: nodejs20.x
-    CodeUri: src/functions
+    Runtime: nodejs24.x
 
 Resources:
     update:
       Type: 'AWS::Serverless::Function'
       Properties:
-        Handler: update.handler
+        CodeUri: .webpack/update
+        Handler: app.handler
     delete:
       Type: 'AWS::Serverless::Function'
       Properties:
-        Handler: delete.handler
+        CodeUri: .webpack/delete
+        Handler: app.handler
     batchFetch:
       Type: 'AWS::Serverless::Function'
       Properties:
-        Handler: batchFetch.handler
+        CodeUri: .webpack/batchFetch
+        Handler: app.handler
     create:
       Type: 'AWS::Serverless::Function'
       Properties:
-        Handler: create.handler
+        CodeUri: .webpack/create
+        Handler: app.handler
     list:
       Type: 'AWS::Serverless::Function'
       Properties:
-        Handler: list.handler
+        CodeUri: .webpack/list
+        Handler: app.handler
     get:
       Type: 'AWS::Serverless::Function'
       Properties:
-        Handler: get.handler
+        CodeUri: .webpack/get
+        Handler: app.handler
     getPenaltyGroupPaymentRecord:
       Type: 'AWS::Serverless::Function'
       Properties:
-        Handler: getPenaltyGroupPaymentRecord.handler
+        CodeUri: .webpack/getPenaltyGroupPaymentRecord
+        Handler: app.handler
     createPenaltyGroupPaymentRecord:
       Type: 'AWS::Serverless::Function'
       Properties:
-        Handler: createPenaltyGroupPaymentRecord.handler
+        CodeUri: .webpack/createPenaltyGroupPaymentRecord
+        Handler: app.handler
     deletePenaltyGroupPaymentRecord:
       Type: 'AWS::Serverless::Function'
       Properties:
-        Handler: deletePenaltyGroupPaymentRecord.handler
+        CodeUri: .webpack/deletePenaltyGroupPaymentRecord
+        Handler: app.handler
 	

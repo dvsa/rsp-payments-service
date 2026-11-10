@@ -1,0 +1,31 @@
+version: v1.25.0
+ignore:
+  SNYK-JS-FAKERJSFAKER-18674671:
+    - 'serverless-openapi-documenter@0.1.7 > openapi-to-postmanv2@6.4.2 > postman-collection@5.3.1 > @faker-js/faker@5.5.3':
+        reason: 'User-approved development-only exception. Latest Postman pins Faker 5.5.3 and uses legacy locale APIs incompatible with patched Faker 10.5+. Generate only from trusted repository configuration; review the upstream fix before expiry.'
+        expires: '2027-06-10T00:00:00.000Z'
+  SNYK-JS-BRACES-19963945:
+    - '@babel/cli@7.29.7 > chokidar@3.6.0 > braces@3.0.3':
+        reason: 'User-approved development-only exception. No patched braces release exists. Restrict build/watch glob patterns to trusted repository configuration and review upstream before expiry.'
+        expires: '2027-06-10T00:00:00.000Z'
+    - 'nodemon@3.1.14 > chokidar@3.6.0 > braces@3.0.3':
+        reason: 'User-approved development-only exception. No patched braces release exists. Restrict build/watch glob patterns to trusted repository configuration and review upstream before expiry.'
+        expires: '2027-06-10T00:00:00.000Z'
+    - 'expect@29.7.0 > jest-message-util@29.7.0 > micromatch@4.0.8 > braces@3.0.3':
+        reason: 'User-approved development-only exception. No patched braces release exists. Use trusted test inputs and review upstream before expiry; other required tool paths also retain this dependency.'
+        expires: '2027-06-10T00:00:00.000Z'
+    - 'osls@4.6.0 > fast-glob@3.3.3 > micromatch@4.0.8 > braces@3.0.3':
+        reason: 'User-approved development-only exception. Latest OSLS still requires this chain and no patched braces release exists. Restrict packaging patterns to trusted repository configuration and review upstream before expiry.'
+        expires: '2027-06-10T00:00:00.000Z'
+  SNYK-JS-FLAT-22148819:
+    - 'webpack-merge@5.10.0 > flat@5.0.2':
+        reason: 'User-approved development-only exception. No patched flat release exists; even current webpack-merge retains flat 5.0.2. Merge only repository-authored build configuration and review upstream before expiry.'
+        expires: '2027-06-10T00:00:00.000Z'
+    - 'webpack-cli@5.1.4 > webpack-merge@5.10.0 > flat@5.0.2':
+        reason: 'User-approved development-only exception. No patched flat release exists; even current webpack-cli/webpack-merge retain the affected package. Merge only repository-authored build configuration and review upstream before expiry.'
+        expires: '2027-06-10T00:00:00.000Z'
+  SNYK-JS-URIJS-19963963:
+    - 'eslint@8.57.1 > @eslint/eslintrc@2.1.4 > ajv@6.15.0 > uri-js@4.4.1':
+        reason: 'User-approved development-only exception. No patched uri-js release exists. Airbnb-base supports ESLint 7/8; removing this dependency requires a separately reviewed lint-policy migration. Validate trusted repository configuration only and review upstream before expiry.'
+        expires: '2027-06-10T00:00:00.000Z'
+patch: {}

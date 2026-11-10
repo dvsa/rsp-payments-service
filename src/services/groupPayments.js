@@ -1,10 +1,11 @@
 // @ts-check
-import { Lambda } from 'aws-sdk';
+import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
 import createResponse from '../utils/createResponse';
 import isEmptyObject from '../utils/isEmptyObject';
 import { logInfo, logError } from '../utils/logger';
+import awsError from '../utils/awsError';
 
-const lambda = new Lambda({ region: 'eu-west-1' });
+const lambda = new LambdaClient({ region: 'eu-west-1' });
 export default class GroupPayments {
 	constructor(
 		db,
@@ -175,10 +176,10 @@ export default class GroupPayments {
 			},
 		};
 
-		return lambda.invoke({
+		return lambda.send(new InvokeCommand({
 			FunctionName: this.updateMultiplePenaltyDocumentsArn,
 			Payload: JSON.stringify(payload),
-		}).promise();
+		})).catch(awsError);
 	}
 
 	async _createIndividualPaymentRecords(penaltyIds, paymentDetail, paymentCode) {
@@ -254,10 +255,10 @@ export default class GroupPayments {
 			paymentStatus,
 			penaltyType,
 		});
-		return lambda.invoke({
+		return lambda.send(new InvokeCommand({
 			FunctionName: this.updatePenaltyGroupPaymentRecordArn,
 			Payload: `{"body": { "id": "${id}", "paymentStatus": "${paymentStatus}", "penaltyType": "${penaltyType}" } }`,
-		}).promise();
+		})).catch(awsError);
 	}
 
 	static create400Response(err) {

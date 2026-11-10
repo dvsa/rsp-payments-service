@@ -1,4 +1,4 @@
-import { doc } from 'serverless-dynamodb-client';
+import { doc } from '../utils/dynamodb';
 import Payments from '../services/payments';
 
 const payments = new Payments(

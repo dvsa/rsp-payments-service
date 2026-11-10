@@ -18,6 +18,7 @@ npm-debug.log
 dist
 .idea
 .aws-sam/
+.webpack/
 coverage/
 .nyc_output/
 integration-reports/

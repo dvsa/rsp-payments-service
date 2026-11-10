@@ -1,4 +1,4 @@
-import { doc } from 'serverless-dynamodb-client';
+import { doc } from '../utils/dynamodb';
 import GroupPayments from '../services/groupPayments';
 import createResponse from '../utils/createResponse';
 import isEmptyObject from '../utils/isEmptyObject';

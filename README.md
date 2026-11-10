@@ -1,15 +1,16 @@
 # RSP Payments service
 
-## Node 20 local baseline
+## Node 24 runtime upgrade
 
-This branch establishes a local baseline for later Node 24 and Serverless Starter
-work. Production JavaScript and business behaviour are unchanged. Existing defects
-are characterised, not fixed. Node 20 and AWS SDK v2 are legacy dependencies
-retained for this stage; this is not a deployment-ready modernisation.
+This branch upgrades the established Node 20 baseline to Node 24, the open-source
+Serverless fork (OSLS) and AWS SDK v3. Payment business behaviour, REST routes and
+accepted defects are preserved. This is not a Serverless Starter rewrite or an
+upgrade of live infrastructure.
 
-Startup follows the Documents Node 20 approach: load the service's `.env`, resolve
-an authenticated AWS profile with AWS CLI v2, select Java 21, and run the existing
-Babel/watch/Serverless Offline workflow in ignored `build/`.
+Startup loads `.env` and runs Babel/watch/Offline in ignored `build/`. SDK v3 uses
+the normal profile provider chain for real Lambda calls; the old credential-export
+launcher is removed. Only Offline's loopback DynamoDB client uses explicit fake
+credentials. Production DynamoDB still uses the normal AWS provider chain.
 
 **The database is local, but downstream document-update Lambdas are real AWS
 calls.** There is no shared Lambda factory, synthetic Lambda server or production
@@ -19,7 +20,8 @@ Obtain explicit approval before those checks.
 
 ### First run
 
-Prerequisites: Node 20.20.2, npm 10, Java 21 and AWS CLI v2. With nvm:
+Prerequisites: Node 24.22.2, npm 11, Java 21 and AWS CLI v2 for profile
+authentication/credential-process profiles. With nvm:
 
 ```sh
 nvm install
@@ -30,7 +32,7 @@ npm ci --ignore-scripts
 Create `.env` from `.env.example` if you do not already have private local
 configuration. Do not overwrite an existing file. Select your normal
 non-production AWS profile through `AWS_PROFILE` in the shell or `.env`.
-The launcher pins its child processes to local `paymentsTable` and
+The Offline scripts pin their child processes to local `paymentsTable` and
 `groupPaymentsTable`, overriding any non-local table names without editing `.env`.
 Placeholder Lambda ARNs are sufficient for database-only reads; authorised
 downstream checks need the correct environment-specific ARNs.
@@ -46,18 +48,20 @@ npm start
 
 `setup:local` copies local files, including `.env`, into ignored `build/` and
 downloads DynamoDB Local over HTTPS into `build/.dynamodb/`. It needs network
-access once. `npm start` exports profile credentials into memory only, checks
-expiry, and passes them to its local child processes without printing values.
-Restart the service after renewing expired credentials.
+access once. `npm start` uses Node's `--env-file` support without exporting
+access/session keys. Successful database reads do not prove AWS authentication;
+only explicitly authorised downstream checks exercise that dependency.
 
-On macOS the launcher selects an installed Java 21 JDK; elsewhere configure
-`JAVA_HOME` or `PATH`. Java 21 is the verified baseline prerequisite, not a claim
-that every DynamoDB Local version requires it.
+Configure `JAVA_HOME` or `PATH` yourself; startup does not select a JDK. The
+downloaded DynamoDB Local 1.25.1 was verified with Corretto 21.0.13. This is the
+verified combination, not a claim that every DynamoDB Local release requires
+Java 21.
 
-The compatible local tools are Serverless 3, Offline 13 and `serverless-dynamodb`.
-Offline 12 cannot execute `nodejs20.x`; the obsolete `serverless-dynamodb-local`
-plugin is incompatible with Serverless 3. A scoped
-`--no-experimental-require-module` flag supports Serverless 3 on modern Node 20.
+The resolved local tools are OSLS 4.6.0, Offline 14.8.4 and
+`serverless-dynamodb`. The `serverless` package is an OSLS alias, also used to
+satisfy plugin peers; licensed Serverless v4 and AWS SDK v2 are not installed.
+The obsolete framework module-loading flag is removed. The test scripts retain
+`--no-experimental-detect-module` so Mocha uses the Babel require hook.
 
 ### Local transport and readiness
 
@@ -73,12 +77,12 @@ configuration. Only the local `offline` command bypasses authorization with
 `--noAuth`. Do not expose local services to an untrusted network; DynamoDB Local
 may listen beyond loopback.
 
-Offline reloads handlers for each request. This prevents Offline 13 reusing a
-terminated worker after the known PUT timeout and makes repeated contract runs
-reliable. It is a local emulation setting, not a production handler fix.
+Offline retains `reloadHandler: true` from the accepted baseline. Fresh workers
+avoid reuse after the known PUT timeout. This is a local emulation setting, not
+a production handler fix.
 
-The launcher refuses occupied ports instead of stopping their owners. After
-`Server ready`, inspect actual seeded records:
+Check these ports and their process owners before starting; do not reuse an old
+API or stop somebody else's service. After `Server ready`, inspect actual seeds:
 
 ```sh
 curl --fail http://localhost:3000/dev/payments/820500000877_FPN
@@ -91,13 +95,14 @@ Individual payment fixtures use the current persisted fields: `ID`,
 `PenaltyStatus` and `PaymentDetail`. Paid records include the required payment
 method and date; unpaid records have an empty `PaymentDetail`.
 
-The seed contains four standalone payments and four group-member payments:
+The seed contains four standalone payments and six group-member payments:
 
 | Group | Type | Member payment IDs |
 | --- | --- | --- |
 | `15xk9i0xujgg` | FPN | `820500000881_FPN`, `820500000882_FPN` |
 | `15xk9i0xujgg` | IM | `0000011123456_IM` |
 | `15xef9lt3bhc` | FPN | `820500000883_FPN` |
+| `15xef9lt3bhc` | CDN | `820500000884_CDN`, `820500000885_CDN` |
 
 Group entries contain `PaymentStatus: PAID`, `PaymentMethod`, a seconds-based
 `PaymentDate` and `penaltyIds`. Each member has the matching `PenaltyGroupId`
@@ -158,23 +163,56 @@ are in ignored `coverage/`, with raw data in `.nyc_output/`. Export-only
 `src/handler.js` remains included with zero executable counters, although NYC's
 text table displays 0%. There is no configured type-check command.
 
-CI runs the same coverage gate and local-tooling tests with Node 20/npm 10.
+CI runs the same coverage gate and local-tooling tests with Node 24/npm 11.
 Integration tests are separate, manual and blocked in CI.
 
-Verified locally on Node 20.20.2:
+Verified locally on Node 24.22.2/npm 11.19.1:
 
 | Check | Result |
 | --- | --- |
-| Isolated unit suite | 92 passed, including fixture contracts, network isolation and existing-defect characterisation |
-| Source coverage | 99.59% statements, 98.48% branches, 100% functions, 99.58% lines; 95% per-file gate passed |
-| Startup/transport safety tests | 10 passed, including localhost binding |
+| Isolated unit suite | 108 passed, including v3 commands/errors/byte payloads, isolation and existing-defect contracts |
+| Source coverage | 99.62% statements, 98.73% branches, 100% functions, 99.60% lines; 95% per-file gate passed |
+| Startup/transport safety tests | Six passed, including real direct-startup scripts with synthetic profile configuration |
 | Integration-tooling safety tests | 24 passed, covering target/ownership/race guards, cleanup, runner outcomes and reports |
 | Authorised manual API baseline | 35 passed across all nine routes in `rspnonprod`; known-defect cases are explicitly labelled |
-| Default API subset | 14 passed, 16 skipped, five not-run; intentional nonzero exit for incomplete AWS-gated coverage |
-| Authenticated local startup | Verified eight payment/two group seed bodies; repeated runs verified with fresh local workers |
-| Shutdown | Ctrl-C stopped the watcher, Offline and DynamoDB; task-owned ports were released |
+| Legacy integrations | Nine passed after the owned-fixture suite; their mutations were discarded with the in-memory database |
+| Profile-based local startup | Verified seeded payment/group bodies and authorised real Lambda invocations, with inherited credential variables cleared; restart to load later fixture additions |
+| Shutdown | Task-owned watcher, Offline and DynamoDB stopped; ports released |
 | Source and integration lint | Passed |
-| Production build (earlier baseline verification) | All nine ZIPs validated and handler exports loaded without invoking them |
+| Production build | Nine closed, self-contained ZIPs validated; handler exports loaded without cloud invocation |
+| OpenAPI | Strict generation/validation passed for all nine operations |
+| OSLS package | `npm run start-build` passed; lockfile-based production install, all handlers present, `.env` and tests excluded |
+| Production dependencies | npm audit and Snyk: no findings |
+| Full development dependency tree | npm audit: 11 affected packages (four high/seven moderate); policy-aware Snyk: seven medium advisories; `--ignore-policy`: 11 unique advisories (four high/seven medium) |
+
+An initial upgraded contract run had three unexpected read timeouts. Cold
+profile-backed loopback reads took roughly 0.5-1.1 seconds versus 6-19 ms with
+fake local credentials. Restricting fake credentials to Offline's DynamoDB
+client removed that unnecessary profile dependency; the unchanged suite then
+passed 35/35, including cleanup. Real Lambda calls still used the approved AWS
+profile. The earlier failed HTML/JSON evidence is retained in
+`integration-reports/`; no expectations or timeout contracts were weakened.
+
+### Build outputs
+
+`npm run build:prod` derives all nine entries from `lambdas.json`, emits
+`.webpack/<function>/app.js` and awaits complete `dist/<function>.zip` archives.
+Each ZIP includes its own SDK v3 code, without shared numbered chunks. The SAM
+template maps Node 24 functions to those directories and `app.handler`; SAM is
+not required for local development and `.aws-sam/` is not a build input.
+
+`npm run build-openApi` generates and strictly validates `build/openapi.json`,
+then postprocesses it in that directory. Documentation-only additions supply the
+missing group request model and IAM 403 responses; obsolete GET body references
+are removed. Existing request/response model files still contain legacy schema
+definitions; successful generation is not a claim that every schema has been
+fully reconciled with current payment contracts. The independent integration
+suite remains the behavioural baseline.
+
+`npm run start-build` is a separate OSLS packaging check, not a deployment. It
+recreates `build/`, so stop local services first and rerun `npm run setup:local`
+afterwards. Do not use `zip.sh` for verification: it runs `predeploy` and prunes
+the working dependency installation.
 
 ### Manual contract baseline
 
@@ -217,7 +255,7 @@ With approval, authenticate, start a freshly seeded service, then run in a secon
 terminal:
 
 ```sh
-INTEGRATION_ALLOW_LAMBDA=yes npm run test-i
+INTEGRATION_ALLOW_LAMBDA=yes npm run test-i -- --timeout 30000
 ```
 
 The nine legacy tests previously passed in an authorised non-production run.
@@ -246,14 +284,30 @@ verifies downstream document state.
   string `"undefined"` for missing document metadata.
 - Group deletion can log member-cleanup failures and still return success.
   DynamoDB unprocessed batch items are not retried; scans are not paginated.
-- The legacy OpenAPI plugin emits Serverless 3 validation warnings for its
-  `documentation` extension. This does not justify disabling validation or
-  changing application contracts.
-- No remote CI, independent downstream document-state verification, security
-  scan or deployment is implied by these checks. Existing workflows can upload feature-branch
+- Existing logging includes payment tokens/details without general redaction;
+  that pre-existing issue has not been silently changed in the runtime upgrade.
+- No remote CI, independent downstream document-state verification or deployment
+  is implied by these checks. Existing workflows can upload feature-branch
   artifacts and update non-production Lambdas from the default branch.
 
-Keep dependency/security remediation in the later supported-runtime stage. Run
-the required scans before an authorised commit/push; any Payments-specific
-deferral requires an agreed deadline and explicit approval. Do not deploy this
-legacy baseline or copy another service's Snyk exceptions.
+The full-tree security gate is not clear. Compatible upgrades and same-major
+YAML/nanoid overrides were applied, but development-tool advisories remain.
+The four high-severity Snyk findings in Faker, braces, flat and uri-js have
+user-approved exceptions in `.snyk`, expiring **2027-06-10 at 00:00 UTC**.
+They match four exact advisory IDs and eight version-specific development
+dependency paths, not whole packages, production dependencies or future
+versions. No incompatible transitive-major overrides were added.
+
+Published upstream releases were checked: Postman 5.3.1 still pins Faker 5.5.3
+and uses APIs incompatible with patched Faker 10.5+; current OSLS still requires
+unpatched braces; even webpack-merge 6 retains affected flat; removing uri-js
+requires a separate Airbnb/ESLint policy migration. These exceptions are
+temporary risk acceptance, not fixes or proof of non-exploitability. Recheck
+upstream and remediate before expiry; keep `snyk test --dev --ignore-policy` in
+manual verification so accepted findings remain visible.
+
+Seven medium Snyk advisories remain unignored. npm audit does not use `.snyk`
+and still reports its full development findings. Further remediation is
+required before calling stage 2's security work complete. The existing logging
+issue also remains. Live Lambda runtime changes remain external infrastructure
+work.

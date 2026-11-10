@@ -1,6 +1,6 @@
 import expect from 'expect';
 import sinon from 'sinon';
-import AWS from 'aws-sdk';
+import { LambdaClient, InvokeCommand, LambdaServiceException } from '@aws-sdk/client-lambda';
 import GroupPayments from './groupPayments';
 import seededGroups from '../../mock-data/fake-group-payments.json';
 import seededPayments from '../../mock-data/fake-payments.json';
@@ -38,9 +38,9 @@ describe('GroupPayments service', () => {
 		});
 		service = new GroupPayments(db, 'groupPaymentsTable', 'local-group-update', 'local-documents-update', 'local-document-update');
 		invoke = sinon.stub().throws(new Error('Unexpected Lambda invocation'));
-		sinon.stub(AWS.Service.prototype, 'makeRequest').callsFake((operation, params) => {
-			expect(operation).toBe('invoke');
-			return invoke(params);
+		sinon.stub(LambdaClient.prototype, 'send').callsFake((command) => {
+			expect(command).toBeInstanceOf(InvokeCommand);
+			return invoke(command.input);
 		});
 		sinon.stub(console, 'log');
 		sinon.stub(console, 'error');
@@ -60,7 +60,7 @@ describe('GroupPayments service', () => {
 				succeeds('get');
 				succeeds('put');
 				succeeds('batchWrite');
-				invoke.returns({ promise: sinon.stub().resolves({}) });
+				invoke.resolves({});
 				const members = payment.penaltyIds.map((id) => seededPayments.find((member) => member.ID === id));
 				expect(members.length).toBeGreaterThan(0);
 				expect(members).not.toContain(undefined);
@@ -107,7 +107,7 @@ describe('GroupPayments service', () => {
 		succeeds('get');
 		succeeds('put');
 		succeeds('batchWrite');
-		invoke.returns({ promise: sinon.stub().resolves({}) });
+		invoke.resolves({});
 		const response = await service.createPenaltyGroupPaymentRecord(input());
 		expect(response.statusCode).toBe(201);
 		expect(bodyOf(response)).toEqual(stored());
@@ -137,7 +137,7 @@ describe('GroupPayments service', () => {
 		succeeds('get', { Item: existing });
 		succeeds('put');
 		succeeds('batchWrite');
-		invoke.returns({ promise: sinon.stub().resolves({}) });
+		invoke.resolves({});
 		const response = await service.createPenaltyGroupPaymentRecord(input());
 		expect(response.statusCode).toBe(200);
 		expect(bodyOf(response)).toEqual({ ...detail, PaymentStatus: 'PAID' });
@@ -162,7 +162,7 @@ describe('GroupPayments service', () => {
 		succeeds('get', { Item: { ID: groupId, Payments: { FPN: {} } } });
 		succeeds('put');
 		succeeds('batchWrite');
-		invoke.returns({ promise: sinon.stub().resolves({}) });
+		invoke.resolves({});
 		expect((await service.createPenaltyGroupPaymentRecord(input())).statusCode).toBe(200);
 		expect(db.put.firstCall.args[0].Item).toEqual(stored());
 	});
@@ -201,7 +201,7 @@ describe('GroupPayments service', () => {
 		succeeds('get');
 		succeeds('put');
 		succeeds('batchWrite');
-		invoke.returns({ promise: sinon.stub().rejects(new Error('Unavailable')) });
+		invoke.rejects(new Error('Unavailable'));
 		expect((await service.createPenaltyGroupPaymentRecord(input())).statusCode).toBe(500);
 		expect(db.put.calledOnce).toBe(true);
 	});
@@ -210,10 +210,8 @@ describe('GroupPayments service', () => {
 		succeeds('get');
 		succeeds('put');
 		succeeds('batchWrite');
-		invoke.returns({
-			promise: sinon.stub().resolves({
-				StatusCode: 200, FunctionError: 'Unhandled', Payload: '{"errorMessage":"Synthetic failure"}',
-			}),
+		invoke.resolves({
+			StatusCode: 200, FunctionError: 'Unhandled', Payload: Buffer.from('{"errorMessage":"Synthetic failure"}'),
 		});
 		const response = await service.createPenaltyGroupPaymentRecord(input());
 		expect(response.statusCode).toBe(201);
@@ -226,14 +224,14 @@ describe('GroupPayments service', () => {
 		succeeds('get');
 		succeeds('put');
 		fails('batchWrite', new Error('Unavailable'));
-		invoke.returns({ promise: sinon.stub().resolves({}) });
+		invoke.resolves({});
 		expect((await service.createPenaltyGroupPaymentRecord(input())).statusCode).toBe(500);
 	});
 
 	it('wraps a synchronous member request-construction failure', async () => {
 		succeeds('get');
 		succeeds('put');
-		invoke.returns({ promise: sinon.stub().resolves({}) });
+		invoke.resolves({});
 		const response = await service.createPenaltyGroupPaymentRecord({ ...input(), PenaltyIds: undefined });
 		expect(response.statusCode).toBe(500);
 		expect(db.batchWrite.called).toBe(false);
@@ -251,7 +249,7 @@ describe('GroupPayments service', () => {
 	it('deletes the final group category and updates the exact member documents', async () => {
 		succeeds('get', { Item: stored() });
 		succeeds('delete');
-		invoke.returns({ promise: sinon.stub().resolves({}) });
+		invoke.resolves({});
 		const result = await service.deletePenaltyGroupPaymentRecord(groupId, 'FPN');
 		expect(result.response.statusCode).toBe(200);
 		expect(bodyOf(result.response)).toEqual({});
@@ -272,7 +270,7 @@ describe('GroupPayments service', () => {
 		const remaining = { ID: groupId, Payments: { IM: { ...existing.Payments.IM } } };
 		succeeds('get', { Item: existing });
 		succeeds('put');
-		invoke.returns({ promise: sinon.stub().resolves({}) });
+		invoke.resolves({});
 		const result = await service.deletePenaltyGroupPaymentRecord(groupId, 'FPN');
 		expect(result.response.statusCode).toBe(200);
 		expect(bodyOf(result.response)).toEqual(remaining);
@@ -299,9 +297,20 @@ describe('GroupPayments service', () => {
 	it('reports a document-update failure after group deletion', async () => {
 		succeeds('get', { Item: stored() });
 		succeeds('delete');
-		invoke.returns({ promise: sinon.stub().rejects(new Error('Unavailable')) });
+		invoke.rejects(new Error('Unavailable'));
 		const result = await service.deletePenaltyGroupPaymentRecord(groupId, 'FPN');
 		expect(result.response.statusCode).toBe(501);
+		expect(result.penaltyIds).toBeUndefined();
+	});
+
+	it('retains the downstream HTTP error status for SDK v3 Lambda service exceptions', async () => {
+		succeeds('get', { Item: stored() });
+		succeeds('delete');
+		invoke.rejects(new LambdaServiceException({
+			name: 'ResourceNotFoundException', $fault: 'client', $metadata: { httpStatusCode: 404 },
+		}));
+		const result = await service.deletePenaltyGroupPaymentRecord(groupId, 'FPN');
+		expect(result.response.statusCode).toBe(404);
 		expect(result.penaltyIds).toBeUndefined();
 	});
 });

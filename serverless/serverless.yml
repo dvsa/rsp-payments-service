@@ -1,5 +1,13 @@
 service: rsp-payments
 
+package:
+  patterns:
+    - '!.env'
+    - '!.env.*'
+    - '!**/*.unit.js'
+    - '!test/**'
+    - '!artifacts/**'
+
 custom:
   documentation:
     models:
@@ -30,6 +38,23 @@ custom:
       - name: DeleteRequest
         description: Delete a payment for a single penalty
         schema: ${file(models/DeleteRequest.json)}
+      - name: GroupPaymentRequest
+        description: Create or extend a penalty-group payment
+        contentType: application/json
+        schema:
+          type: object
+          required: [PaymentCode, PenaltyType, PaymentDetail, PenaltyIds]
+          properties:
+            PaymentCode:
+              type: string
+            PenaltyType:
+              type: string
+            PaymentDetail:
+              type: object
+            PenaltyIds:
+              type: array
+              items:
+                type: string
     version: '1'
     title: 'RSP Payments API'
     description: 'RSP Payments api'
@@ -59,10 +84,10 @@ plugins:
   - serverless-dotenv-plugin
   - serverless-dynamodb
   - serverless-offline
-  - serverless-openapi-documentation
+  - serverless-openapi-documenter
 provider:
   name: aws
-  runtime: nodejs20.x
+  runtime: nodejs24.x
   region: eu-west-1
   stage: dev
 
@@ -81,11 +106,10 @@ functions:
           documentation:
             summary: "List of Payments"
             description: "Lists of Payments"
-            requestBody:
-              description: "None"
-            requestModels:
-              application/json: "GetRequest"
             methodResponses:
+              - statusCode: 403
+                responseBody:
+                  description: "IAM authorization failure (local --noAuth bypasses this)"
               - statusCode: 200
                 responseBody:
                   description: "A list of Payments"
@@ -116,11 +140,10 @@ functions:
                 schema:
                   type: "string"
                   pattern: "^[0-9]+$"
-            requestBody:
-              description: "Nothing"
-            requestModels:
-              application/json: "GetRequest"
             methodResponses:
+              - statusCode: 403
+                responseBody:
+                  description: "IAM authorization failure (local --noAuth bypasses this)"
               - statusCode: 200
                 responseBody:
                   description: "Details of the payment"
@@ -156,11 +179,10 @@ functions:
                 schema:
                   type: "string"
                   pattern: "^[0-9]+$"
-            requestBody:
-              description: "Nothing"
-            requestModels:
-              application/json: "GetRequest"
             methodResponses:
+              - statusCode: 403
+                responseBody:
+                  description: "IAM authorization failure (local --noAuth bypasses this)"
               - statusCode: 200
                 responseBody:
                   description: "Details of the payment"
@@ -202,6 +224,9 @@ functions:
                   type: "string"
                   pattern: "^[0-9]+$"
             methodResponses:
+              - statusCode: 403
+                responseBody:
+                  description: "IAM authorization failure (local --noAuth bypasses this)"
               - statusCode: 200
                 responseBody:
                   description: "Details of the updated payment group"
@@ -231,6 +256,9 @@ functions:
             requestModels:
               application/json: "PaymentRequest"
             methodResponses:
+              - statusCode: 403
+                responseBody:
+                  description: "IAM authorization failure (local --noAuth bypasses this)"
               - statusCode: 200
                 responseBody:
                   description: "Details of the created payment"
@@ -257,7 +285,12 @@ functions:
             description: "Creates a new payment"
             requestBody:
               description: "Details of payment"
+            requestModels:
+              application/json: "GroupPaymentRequest"
             methodResponses:
+              - statusCode: 403
+                responseBody:
+                  description: "IAM authorization failure (local --noAuth bypasses this)"
               - statusCode: 200
                 responseBody:
                   description: "Details of the created payment"
@@ -287,6 +320,9 @@ functions:
             requestModels:
               application/json: "PaymentRequest"
             methodResponses:
+              - statusCode: 403
+                responseBody:
+                  description: "IAM authorization failure (local --noAuth bypasses this)"
               - statusCode: 200
                 responseBody:
                   description: "Details of the created payment"
@@ -322,6 +358,9 @@ functions:
             requestModels:
               application/json: "DeleteRequest"
             methodResponses:
+              - statusCode: 403
+                responseBody:
+                  description: "IAM authorization failure (local --noAuth bypasses this)"
               - statusCode: 200
                 responseBody:
                   description: "Details of the deleted payment"
@@ -357,6 +396,9 @@ functions:
             requestModels:
               application/json: "PaymentRequest"
             methodResponses:
+              - statusCode: 403
+                responseBody:
+                  description: "IAM authorization failure (local --noAuth bypasses this)"
               - statusCode: 200
                 responseBody:
                   description: "Details of the updated payment"

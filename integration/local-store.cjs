@@ -31,14 +31,26 @@ function configuration(env) {
 
 function client(endpoint) {
 	localUrl(endpoint, 8000, '');
-	const AWS = require('aws-sdk');
-	return new AWS.DynamoDB.DocumentClient({
+	const { DynamoDBClient, DescribeTableCommand } = require('@aws-sdk/client-dynamodb');
+	const {
+		DynamoDBDocumentClient, GetCommand, PutCommand, DeleteCommand,
+	} = require('@aws-sdk/lib-dynamodb');
+	const service = new DynamoDBClient({
 		endpoint,
 		region: 'eu-west-1',
 		credentials: { accessKeyId: 'localIntegration', secretAccessKey: 'localIntegration' },
-		maxRetries: 0,
-		httpOptions: { connectTimeout: 2000, timeout: 5000 },
+		maxAttempts: 1,
+		requestHandler: { connectionTimeout: 2000, requestTimeout: 5000 },
 	});
+	const document = DynamoDBDocumentClient.from(service, {
+		marshallOptions: { removeUndefinedValues: true },
+	});
+	return {
+		get: (input) => ({ promise: () => document.send(new GetCommand(input)) }),
+		put: (input) => ({ promise: () => document.send(new PutCommand(input)) }),
+		delete: (input) => ({ promise: () => document.send(new DeleteCommand(input)) }),
+		service: { describeTable: (input) => ({ promise: () => service.send(new DescribeTableCommand(input)) }) },
+	};
 }
 
 function entries(data) {
