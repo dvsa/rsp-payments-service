@@ -10,6 +10,27 @@ const root = path.resolve(__dirname, '..');
 const config = yaml.load(fs.readFileSync(path.join(root, 'serverless/serverless.yml'), 'utf8'));
 const { scripts } = require('../package.json');
 
+for (const setupExit of [0, 1]) {
+	test(`startup runs database setup first and stops on setup failure (exit ${setupExit})`, () => {
+		const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'payments-dbsetup-test-'));
+		try {
+			fs.copyFileSync(path.join(root, 'dbsetup.sh'), path.join(directory, 'dbsetup.sh'));
+			fs.writeFileSync(path.join(directory, 'npm'), `#!/bin/sh
+printf '%s\\n' "$*" >> commands
+if [ "$2" = "setup:local" ]; then exit ${setupExit}; fi
+`, { mode: 0o755 });
+			const result = spawnSync('/bin/sh', ['-c', scripts.start], {
+				cwd: directory, env: { PATH: directory }, encoding: 'utf8',
+			});
+			assert.equal(result.status, setupExit, result.stderr);
+			assert.equal(fs.readFileSync(path.join(directory, 'commands'), 'utf8'),
+				setupExit === 0 ? 'run setup:local\nrun compile\nrun parallel\n' : 'run setup:local\n');
+		} finally {
+			fs.rmSync(directory, { recursive: true, force: true });
+		}
+	});
+}
+
 test('local routes match the Terraform REST v1 method/path/handler inventory', () => {
 	const routes = Object.values(config.functions).flatMap((definition) => definition.events.map((event) => {
 		assert.ok(event.http, 'Every Payments HTTP route must use REST v1 http events, not httpApi');

@@ -10,7 +10,7 @@
     "npm": "11.x"
   },
   "scripts": {
-    "start": "npm run copy-localfiles && npm run compile && npm run parallel",
+    "start": "./dbsetup.sh && npm run compile && npm run parallel",
     "start:local": "npm start",
     "setup:local": "npm run copy-localfiles && cd build && node ../node_modules/serverless/bin/serverless.js dynamodb install",
     "test:coverage": "BABEL_ENV=coverage nyc npm test",

@@ -42,13 +42,15 @@ for example:
 
 ```sh
 aws sso login --profile YOUR_PROFILE
-npm run setup:local
 npm start
 ```
 
-`setup:local` copies local files, including `.env`, into ignored `build/` and
-downloads DynamoDB Local over HTTPS into `build/.dynamodb/`. It needs network
-access once. `npm start` uses Node's `--env-file` support without exporting
+`npm start` first runs `dbsetup.sh`, which delegates to `setup:local` to copy local
+files, including `.env`, into ignored `build/` and install DynamoDB Local over
+HTTPS into `build/.dynamodb/` if its JAR is missing. It needs network access once;
+subsequent starts reuse the installation. Deleting `build/` causes the next start
+to reinstall it. `npm run setup:local` remains available for setup only.
+`npm start` uses Node's `--env-file` support without exporting
 access/session keys. Successful database reads do not prove AWS authentication;
 only explicitly authorised downstream checks exercise that dependency.
 
