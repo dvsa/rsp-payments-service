@@ -107,7 +107,7 @@ function scenarios() {
 			await paymentAbsent(c, c.data.invalidId);
 		}, { aws: true });
 	}
-	add('update', 'update-state-transition', 'Accepted known defect: local PUT returns 504 with an empty body; independently verify the real UNPAID to PAID transition and preserve unrelated fields', async (c) => {
+	add('update', 'update-state-transition', 'PUT awaits the write and returns the complete saved payment; independent reads verify the UNPAID to PAID transition and preserved unrelated fields', async (c) => {
 		const expected = {
 			...c.data.update,
 			PenaltyStatus: 'PAID',
@@ -116,17 +116,18 @@ function scenarios() {
 		};
 		const body = payload(expected);
 		delete body.PaymentCode;
-		c.deep((await c.http('PUT', `/payments/${expected.ID}`, body, 504, 'gateway-timeout')).body, '', 'Non-async PUT handler times out with an exactly empty response body');
-		await c.poll(() => paymentRead(c, expected));
-	}, { knownDefect: true });
-	add('update', 'update-validation-no-write', 'Accepted known defect: invalid local PUT also returns 504 with an empty body; independent reads prove validation prevented any persistence', async (c) => {
+		c.deep((await c.http('PUT', `/payments/${expected.ID}`, body, 200)).body, expected, 'PUT returns the complete persisted record after the write succeeds');
+		await paymentRead(c, expected);
+	});
+	add('update', 'update-validation-no-write', 'Invalid PUT returns a meaningful validation error; independent reads prove no persistence occurred', async (c) => {
 		const body = payload(c.data.unpaid);
 		delete body.PaymentCode;
 		body.PenaltyStatus = 'INVALID';
-		const response = await c.http('PUT', `/payments/${c.data.unpaid.ID}`, body, 504, 'gateway-timeout');
-		c.deep(response.body, '', 'Invalid local PUT retains the existing exactly empty timeout response');
+		const response = await c.http('PUT', `/payments/${c.data.unpaid.ID}`, body, 405);
+		c.deep(Object.keys(response.body), ['err'], 'Invalid update has exactly the error envelope');
+		c.check(typeof response.body.err === 'string' && response.body.err.includes('PenaltyStatus'), 'Validation error identifies the rejected payment status');
 		await paymentRead(c, c.data.unpaid);
-	}, { knownDefect: true });
+	});
 	for (const [name, field] of [['unpaid', 'removeUnpaid'], ['paid', 'removePaid']]) {
 		add('remove', `delete-${name}`, 'Deletion returns {}, independently removes the payment, and preserves unrelated records', async (c) => {
 			const expected = c.data[field];

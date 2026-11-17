@@ -75,9 +75,9 @@ headers. Offline reflects that origin; without an Origin request header it
 omits the CORS response header, even though the application helper emits `*`.
 The helper's original wildcard response is separately unit-tested.
 
-Local Offline 14 retains `reloadHandler: true` from the Node 20 baseline to avoid
-reusing workers after timeouts. This does not repair the non-async PUT handler.
-Restart the server after changing this configuration.
+Local Offline 14 retains `reloadHandler: true` from the Node 20 baseline.
+This setting is independent of the asynchronous PUT handler fix. Restart the
+server after changing this configuration.
 
 | Export | Method and route | Input/output and effects |
 | --- | --- | --- |
@@ -85,7 +85,7 @@ Restart the server after changing this configuration.
 | `get` | GET `/payments/{id}` | `{payment: storedRecord}`; a missing record currently returns 200 `{}` |
 | `batchFetch` | POST `/payments/batches` | `{ids: [...]}` to `{payments: [...]}` projected to ID/status/details; missing IDs omitted, order unspecified |
 | `create` | POST `/payments` | Reference/type/status/detail plus optional downstream payment code; returns `{payment: ...}` and persists ID/status/details before calling Documents |
-| `update` | PUT `/payments/{id}` | Validated reference/type/status/detail; changes status/type/details locally and preserves unrelated fields; non-async handler currently returns an empty 504 in Offline, even for validation rejection |
+| `update` | PUT `/payments/{id}` | Validated reference/type/status/detail; waits for the conditional write, returns 200 with the full saved record and preserves unrelated fields; invalid requests return 405 without writing; database failures return a controlled 500 |
 | `remove` | DELETE `/payments/{id}` | Deletes locally, returns `{}`; paid records additionally invoke Documents |
 | `getPenaltyGroupPaymentRecord` | GET `/groupPayments/{id}` | Full stored group/categories/member IDs; missing is 404 `{}` |
 | `createPenaltyGroupPaymentRecord` | POST `/groupPayments` | PaymentCode/type/detail/member IDs; new group returns 201 full group, extension returns 200 category detail; writes group/members and invokes group update |
@@ -187,18 +187,17 @@ do not execute this suite.
 
 Known behaviour is characterised, not repaired: missing individual GET returns
 200 `{}`, duplicate individual overwrite, invalid batches returning database
-errors and missing group/category deletion returning 501. Missing individual
-deletion, unhandled asynchronous conditional-update failures, malformed inputs,
+errors and missing group/category deletion returning 501. Controlled missing-payment
+DELETE 404 responses, asynchronous conditional-update failures, malformed inputs,
 downstream invocation envelopes and ignored Lambda `FunctionError` values are
-covered by isolated unit tests where HTTP probing could destabilise the server.
+covered by isolated unit tests; this manual suite does not exhaustively probe
+those error paths.
 
-The PUT timeout was reproduced and explicitly accepted as a known-defect baseline:
-both valid and invalid requests return HTTP 504 with a zero-length body locally.
-The valid request still persists its state transition; the invalid request
-persists nothing. Both are independently read back. The underlying service's
-premature 200 `{}` and validation 405 responses remain unit-characterised, but
-its exported non-async handler never completes the HTTP invocation. A future
-intentional fix must update this contract explicitly, not silently relax it.
+The PUT contracts now require the handler fix: a valid request returns HTTP 200
+with the complete saved record after its write completes; an invalid status
+returns HTTP 405 with a meaningful validation error and no write. Both outcomes
+are independently read back. These replace the old explicitly accepted timeout
+contracts and are no longer labelled known defects.
 
 A successful Lambda invocation/HTTP response does **not** prove downstream
 document processing succeeded. The service ignores some Lambda function-error

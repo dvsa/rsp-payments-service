@@ -26,6 +26,8 @@ describe('Payments service', () => {
 	let db;
 	let service;
 	let invoke;
+	let infoLog;
+	let errorLog;
 
 	beforeEach(() => {
 		db = {};
@@ -38,8 +40,8 @@ describe('Payments service', () => {
 			expect(command).toBeInstanceOf(InvokeCommand);
 			return invoke(command.input);
 		});
-		sinon.stub(console, 'log');
-		sinon.stub(console, 'error');
+		infoLog = sinon.stub(console, 'log');
+		errorLog = sinon.stub(console, 'error');
 	});
 
 	function succeeds(method, result) {
@@ -250,10 +252,15 @@ describe('Payments service', () => {
 		expect(invoke.called).toBe(false);
 	});
 
-	it('characterises missing individual deletion rejecting instead of returning a controlled 404', async () => {
+	it('returns a controlled 404 for a missing payment without invoking Documents', async () => {
 		succeeds('delete', {});
-		await expect(service.delete(id)).rejects.toThrow(TypeError);
+		const response = await service.delete(id);
+		expect(response.statusCode).toBe(404);
+		expect(bodyOf(response)).toEqual({ err: 'Payment not found' });
+		expect(db.delete.calledOnce).toBe(true);
 		expect(invoke.called).toBe(false);
+		expect(infoLog.called).toBe(false);
+		expect(JSON.parse(errorLog.firstCall.args[0]).logName).toBe('DeletePaymentNotFound');
 	});
 
 	it('marks the document unpaid after deleting a paid payment', async () => {
@@ -300,18 +307,26 @@ describe('Payments service', () => {
 		expect(db.update.called).toBe(false);
 	});
 
-	it('characterises an update returning 200 with an empty body before its write settles', async () => {
+	it('waits for the update write before returning the complete saved payment', async () => {
 		const attributes = { ID: id, PenaltyStatus: 'PAID', PaymentDetail: paymentDetail };
 		let resolveWrite;
 		const write = new Promise((resolve) => { resolveWrite = resolve; });
 		db.update.returns({ promise: () => write });
 		const input = paidBody();
 		delete input.PaymentCode;
-		const response = await service.update(id, input);
-		expect(response.statusCode).toBe(200);
-		expect(bodyOf(response)).toEqual({});
+		let completed = false;
+		const pending = Promise.resolve(service.update(id, input)).then((response) => {
+			completed = true;
+			return response;
+		});
+		await Promise.resolve();
+		expect(completed).toBe(false);
+		expect(infoLog.called).toBe(false);
 		resolveWrite({ Attributes: attributes });
-		expect(await write).toEqual({ Attributes: attributes });
+		const response = await pending;
+		expect(response.statusCode).toBe(200);
+		expect(bodyOf(response)).toEqual(attributes);
+		expect(invoke.called).toBe(false);
 		expect(db.update.firstCall.args[0]).toEqual({
 			TableName: 'paymentsTable',
 			Key: { ID: id },
@@ -332,17 +347,16 @@ describe('Payments service', () => {
 		});
 	});
 
-	it('characterises an asynchronous update rejection not reaching the existing error response', async () => {
+	it('returns the existing error response for a rejected update write', async () => {
 		const error = new Error('ConditionalCheckFailedException');
-		const write = Promise.reject(error);
-		const rejection = expect(write).rejects.toBe(error);
-		db.update.returns({ promise: () => write });
+		fails('update', error);
 		const input = paidBody();
 		delete input.PaymentCode;
 		const response = await service.update(id, input);
-		expect(response.statusCode).toBe(200);
-		expect(bodyOf(response)).toEqual({});
-		await rejection;
+		expect(response.statusCode).toBe(500);
+		expect(bodyOf(response)).toEqual({ err: 'Failed to update payment' });
+		expect(infoLog.called).toBe(false);
+		expect(JSON.parse(errorLog.firstCall.args[0]).logName).toBe('UpdatePaymentDatabaseError');
 	});
 
 	it('preserves the existing error response for a synchronous update failure', async () => {
