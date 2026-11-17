@@ -2,7 +2,8 @@
 
 import supertest from 'supertest';
 import expect from 'expect';
-import AWS from 'aws-sdk';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, BatchGetCommand } from '@aws-sdk/lib-dynamodb';
 
 const url = 'http://localhost:3000/dev/groupPayments';
 const request = supertest(url);
@@ -12,11 +13,11 @@ let docClient;
 describe('penaltyGroups', () => {
 
 	before(() => {
-		docClient = new AWS.DynamoDB.DocumentClient({
+		docClient = DynamoDBDocumentClient.from(new DynamoDBClient({
 			region: 'eu-west-1',
 			endpoint: 'http://localhost:8000',
 			credentials: { accessKeyId: 'local', secretAccessKey: 'local' },
-		});
+		}), { marshallOptions: { removeUndefinedValues: true } });
 	});
 
 	context('GET', () => {
@@ -254,6 +255,6 @@ async function getPaymentRecords(penaltyIds) {
 			},
 		},
 	};
-	const batchGetResp = await docClient.batchGet(batchGetParams).promise();
+	const batchGetResp = await docClient.send(new BatchGetCommand(batchGetParams));
 	return batchGetResp.Responses.paymentsTable;
 }

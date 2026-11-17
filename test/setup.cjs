@@ -35,10 +35,13 @@ global.fetch = () => {
 	throw new Error('Unexpected network request in unit tests');
 };
 
-const AWS = require('aws-sdk');
-AWS.Service.prototype.makeRequest = () => {
+const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
+const { DynamoDBDocumentClient } = require('@aws-sdk/lib-dynamodb');
+const { LambdaClient } = require('@aws-sdk/client-lambda');
+const blocked = () => {
 	throw new Error('Unexpected AWS request in unit tests');
 };
+for (const Client of [DynamoDBClient, DynamoDBDocumentClient, LambdaClient]) Client.prototype.send = blocked;
 
 exports.mochaHooks = {
 	afterEach() {

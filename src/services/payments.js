@@ -1,11 +1,12 @@
 /* eslint class-methods-use-this: "off" */
 /* eslint-env es6 */
-import AWS from 'aws-sdk';
+import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
 import Validation from '@dvsa/rsp-validation';
 import createResponse from '../utils/createResponse';
 import { logError, logInfo } from '../utils/logger';
+import awsError from '../utils/awsError';
 
-const lambda = new AWS.Lambda({ region: 'eu-west-1' });
+const lambda = new LambdaClient({ region: 'eu-west-1' });
 
 export default class Payments {
 	constructor(db, tableName, decryptArn, documentUpdateArn, documentDeleteArn) {
@@ -198,10 +199,10 @@ export default class Payments {
 		};
 
 		try {
-			await lambda.invoke({
+			await lambda.send(new InvokeCommand({
 				FunctionName: this.documentUpdateArn,
 				Payload: JSON.stringify(payload),
-			}).promise();
+			})).catch(awsError);
 
 			logInfo('CreatePaymentSuccess', {
 				payment: payload.body,
@@ -271,17 +272,17 @@ export default class Payments {
 		if (paymentInfo.PenaltyStatus === 'PAID') {
 			try {
 				// Update document status on deletion of payment
-				const externalData = await lambda.invoke({
+				const externalData = await lambda.send(new InvokeCommand({
 					FunctionName: this.documentDeleteArn,
 					Payload: `{"body": { "id": "${id}", "paymentStatus": "UNPAID", "paymentAmount": "${paymentInfo.PaymentDetail.PaymentAmount}","penaltyRefNo": "${paymentInfo.PenaltyReference}", "penaltyType":"${paymentInfo.PenaltyType}", "paymentToken":"${paymentInfo.PaymentCode}" } }`,
-				}).promise();
+				})).catch(awsError);
 
 				logInfo('UpdateDocumentOnDeleteSuccess', {
 					id,
 					paymentInfo,
 				});
 
-				if (externalData.Payload) {
+				if (externalData.Payload && externalData.Payload.length) {
 					return response;
 				}
 				return createResponse({ statusCode: 400 });

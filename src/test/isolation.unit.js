@@ -1,15 +1,16 @@
 import expect from 'expect';
-import AWS from 'aws-sdk';
+import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb';
+import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
 import http from 'http';
 import https from 'https';
-import { doc } from 'serverless-dynamodb-client';
+import { doc } from '../utils/dynamodb';
 
 describe('Payments unit-test isolation', () => {
 	it('blocks unstubbed DynamoDB and Lambda requests, including the shared database client', () => {
 		[
-			() => doc.get({ TableName: 'unit', Key: { ID: 'unit' } }),
-			() => new AWS.DynamoDB.DocumentClient().put({ TableName: 'unit', Item: { ID: 'unit' } }),
-			() => new AWS.Lambda().invoke({ FunctionName: 'unit' }),
+			() => doc.get({ TableName: 'unit', Key: { ID: 'unit' } }).promise(),
+			() => new DynamoDBClient({}).send(new GetItemCommand({ TableName: 'unit', Key: { ID: { S: 'unit' } } })),
+			() => new LambdaClient({}).send(new InvokeCommand({ FunctionName: 'unit' })),
 		].forEach((request) => expect(request).toThrow('Unexpected AWS request in unit tests'));
 	});
 

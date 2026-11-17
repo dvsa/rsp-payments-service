@@ -16,10 +16,10 @@ class BundlePlugin {
 	}
 
 	apply(compiler) {
-		compiler.hooks.afterEmit.tap('zip-pack-plugin', async () => {
-			this.archives.forEach(async (archive) => {
-				await BundlePlugin.createArchive(archive.inputPath, archive.outputPath, archive.outputName, archive.ignore);
-			});
+		compiler.hooks.afterEmit.tapPromise('zip-pack-plugin', async () => {
+			await Promise.all(this.archives.map((archive) => BundlePlugin.createArchive(
+				archive.inputPath, archive.outputPath, archive.outputName, archive.ignore,
+			)));
 
 			this.assets.forEach((asset) => {
 				fs.copySync(asset.inputPath, asset.outputPath);
@@ -34,29 +34,20 @@ class BundlePlugin {
 		const output = fs.createWriteStream(`${outputPath}/${outputName}.zip`);
 		const archive = archiver('zip');
 
-		output.on('close', () => {
-			console.log(`${archive.pointer()} total bytes`);
-			console.log('archiver has been finalized and the output file descriptor has closed.');
+		return new Promise((resolve, reject) => {
+			output.once('close', resolve);
+			output.once('error', reject);
+			archive.once('error', reject);
+			archive.pipe(output);
+			archive.glob('**/*', { cwd: inputPath, ignore });
+			archive.finalize().catch(reject);
 		});
-		archive.on('error', (err) => {
-			throw err;
-		});
-
-		archive.pipe(output);
-		archive.glob(
-			'**/*',
-			{
-				cwd: inputPath,
-				skip: ignore,
-			},
-		);
-		return archive.finalize();
 	}
 }
 
 function getArchives() {
 	return lambdaNames.lambdas.map((lambdaName) => ({
-		inputPath: `.aws-sam/build/${lambdaName}`,
+		inputPath: `.webpack/${lambdaName}`,
 		outputPath: `${OUTPUT_FOLDER}`,
 		outputName: `${lambdaName}`,
 	}));

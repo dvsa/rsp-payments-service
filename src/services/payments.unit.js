@@ -1,6 +1,6 @@
 import expect from 'expect';
 import sinon from 'sinon';
-import AWS from 'aws-sdk';
+import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
 import Payments from './payments';
 import seededPayments from '../../mock-data/fake-payments.json';
 import { fixtures, payload } from '../../integration/fixtures.cjs';
@@ -34,9 +34,9 @@ describe('Payments service', () => {
 		});
 		service = new Payments(db, 'paymentsTable', 'unused', 'local-document-update', 'local-document-delete');
 		invoke = sinon.stub().throws(new Error('Unexpected Lambda invocation'));
-		sinon.stub(AWS.Service.prototype, 'makeRequest').callsFake((operation, params) => {
-			expect(operation).toBe('invoke');
-			return invoke(params);
+		sinon.stub(LambdaClient.prototype, 'send').callsFake((command) => {
+			expect(command).toBeInstanceOf(InvokeCommand);
+			return invoke(command.input);
 		});
 		sinon.stub(console, 'log');
 		sinon.stub(console, 'error');
@@ -52,7 +52,7 @@ describe('Payments service', () => {
 
 	it('standalone seeded payments match validated creation responses and persisted record shapes', async () => {
 		succeeds('put', {});
-		invoke.returns({ promise: sinon.stub().resolves({}) });
+		invoke.resolves({});
 		await Promise.all(seededPayments.filter((payment) => !payment.PenaltyGroupId).map(async (payment) => {
 			const [PenaltyReference, PenaltyType] = payment.ID.split('_');
 			const response = await service.create({
@@ -76,7 +76,7 @@ describe('Payments service', () => {
 
 	it('accepts the reserved FPN, IM and CDN integration fixtures with their exact creation shapes', async () => {
 		succeeds('put', {});
-		invoke.returns({ promise: sinon.stub().resolves({}) });
+		invoke.resolves({});
 		await Promise.all(Object.values(fixtures(1700000000).created).map(async (payment) => {
 			const response = await service.create(payload(payment));
 			expect(response.statusCode).toBe(200);
@@ -163,7 +163,7 @@ describe('Payments service', () => {
 
 	it('validates, persists and forwards the exact document-update envelope', async () => {
 		succeeds('put', {});
-		invoke.returns({ promise: sinon.stub().resolves({ Payload: '{}' }) });
+		invoke.resolves({ Payload: Buffer.from('{}') });
 		const input = paidBody();
 		const response = await service.create(input);
 		const item = { ID: id, PenaltyStatus: 'PAID', PaymentDetail: paymentDetail };
@@ -202,7 +202,7 @@ describe('Payments service', () => {
 
 	it('reports a downstream failure after the payment was written', async () => {
 		succeeds('put', {});
-		invoke.returns({ promise: sinon.stub().rejects(new Error('Downstream unavailable')) });
+		invoke.rejects(new Error('Downstream unavailable'));
 		const response = await service.create(paidBody());
 		expect(response.statusCode).toBe(400);
 		expect(db.put.calledOnce).toBe(true);
@@ -211,10 +211,8 @@ describe('Payments service', () => {
 
 	it('characterises Lambda FunctionError not preventing a successful creation response', async () => {
 		succeeds('put', {});
-		invoke.returns({
-			promise: sinon.stub().resolves({
-				StatusCode: 200, FunctionError: 'Unhandled', Payload: '{"errorMessage":"Synthetic failure"}',
-			}),
+		invoke.resolves({
+			StatusCode: 200, FunctionError: 'Unhandled', Payload: Buffer.from('{"errorMessage":"Synthetic failure"}'),
 		});
 		const response = await service.create(paidBody());
 		expect(response.statusCode).toBe(200);
@@ -260,7 +258,7 @@ describe('Payments service', () => {
 
 	it('marks the document unpaid after deleting a paid payment', async () => {
 		succeeds('delete', { Attributes: { ...paidBody(), ID: id } });
-		invoke.returns({ promise: sinon.stub().resolves({ Payload: '{}' }) });
+		invoke.resolves({ Payload: Buffer.from('{}') });
 		const response = await service.delete(id);
 		expect(response.statusCode).toBe(200);
 		expect(invoke.firstCall.args[0].FunctionName).toBe('local-document-delete');
@@ -279,13 +277,19 @@ describe('Payments service', () => {
 
 	it('reports a missing downstream delete payload', async () => {
 		succeeds('delete', { Attributes: paidBody() });
-		invoke.returns({ promise: sinon.stub().resolves({}) });
+		invoke.resolves({});
+		expect((await service.delete(id)).statusCode).toBe(400);
+	});
+
+	it('retains the missing-payload failure for an empty SDK v3 byte payload', async () => {
+		succeeds('delete', { Attributes: paidBody() });
+		invoke.resolves({ Payload: new Uint8Array() });
 		expect((await service.delete(id)).statusCode).toBe(400);
 	});
 
 	it('reports downstream failure after deleting a paid record', async () => {
 		succeeds('delete', { Attributes: paidBody() });
-		invoke.returns({ promise: sinon.stub().rejects(new Error('Unavailable')) });
+		invoke.rejects(new Error('Unavailable'));
 		expect((await service.delete(id)).statusCode).toBe(400);
 	});
 

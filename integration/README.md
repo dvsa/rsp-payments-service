@@ -1,14 +1,14 @@
 # Payments local integration baseline
 
-This manual black-box suite is the regression contract for the Node 20 baseline,
-later runtime/SDK upgrades and a Serverless Starter rewrite. Contracts use HTTP
+This manual black-box suite preserves the Node 20 contracts through the Node 24/
+SDK v3 upgrade and a future Serverless Starter rewrite. Contracts use HTTP
 and independently authored expected values, not production services, handlers or
-validators. Only the separate local fixture adapter uses the existing AWS SDK.
-Production logic is unchanged.
+validators. Only the separate local fixture adapter uses AWS SDK v3. The runtime
+transport is upgraded without changing the independently authored expectations.
 
 ## First run
 
-Follow the main README's Node 20/npm 10, Java 21, dependencies, DynamoDB install
+Follow the main README's Node 24/npm 11, Java 21, dependencies, DynamoDB install
 and private `.env` setup. No private test fixtures are required: all additional
 fixtures in `fixtures.cjs` are synthetic. Do not copy captured AWS records.
 
@@ -22,8 +22,10 @@ npm start
 
 Use the login procedure appropriate to your profile; SSO is an example. Check
 that the service's four configured downstream Lambda ARNs belong to the approved
-environment/account. Never print or copy credentials. The normal launcher loads
-`.env` and resolves the profile in memory. Restart it after refreshing credentials.
+environment/account. Never print or copy credentials. Node loads `.env` and SDK
+v3 resolves the normal profile chain for downstream calls, without a separate
+credential-export launcher. Loopback DynamoDB clients use explicit fake
+credentials.
 
 In the second terminal, first check the offline tooling:
 
@@ -64,7 +66,7 @@ explicit fake credentials and a loopback endpoint. No deployment occurs.
 ## Inventory and contracts
 
 All nine exports have one configured REST v1 HTTP route. The local prefix is
-`/dev`, IAM authorizers remain configured, and the launcher uses local `--noAuth`.
+`/dev`, IAM authorizers remain configured, and the Offline script uses local `--noAuth`.
 There are no Lambda-only, stream or queue handlers. The `remove` export's local
 function name is `delete`; other local/export names match.
 
@@ -73,11 +75,9 @@ headers. Offline reflects that origin; without an Origin request header it
 omits the CORS response header, even though the application helper emits `*`.
 The helper's original wildcard response is separately unit-tested.
 
-Local Offline uses `reloadHandler: true`. Offline 13 can terminate a timed-out
-worker yet leave it available for reuse; subsequent PUT requests then never
-execute. Fresh workers make repeated runs deterministic without repairing the
-non-async handler or changing production code. Restart the server after changing
-this configuration.
+Local Offline 14 retains `reloadHandler: true` from the Node 20 baseline to avoid
+reusing workers after timeouts. This does not repair the non-async PUT handler.
+Restart the server after changing this configuration.
 
 | Export | Method and route | Input/output and effects |
 | --- | --- | --- |
@@ -129,7 +129,7 @@ Only registered reserved IDs may be mutated through HTTP. Foreign records are
 never overwritten by seed/restore, and conditional writes guard ownership races.
 Normal completion/failure/SIGINT/SIGTERM restores previous reserved records,
 removes newly created owned records and independently verifies cleanup. The
-original eight Bruno seed payments/two groups are not reset or changed.
+ten Bruno seed payments/two groups are not reset or changed.
 
 Do not run Bruno mutations or another seed/reset tool concurrently. The lock
 coordinates this suite's commands, not arbitrary clients or the service launcher.
