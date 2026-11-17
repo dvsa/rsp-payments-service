@@ -4,7 +4,7 @@ import supertest from 'supertest';
 import expect from 'expect';
 import AWS from 'aws-sdk';
 
-const url = 'http://localhost:3000/groupPayments';
+const url = 'http://localhost:3000/dev/groupPayments';
 const request = supertest(url);
 const groupId = '15xk9i0xujgg';
 let docClient;
@@ -12,11 +12,11 @@ let docClient;
 describe('penaltyGroups', () => {
 
 	before(() => {
-		AWS.config.update({
+		docClient = new AWS.DynamoDB.DocumentClient({
 			region: 'eu-west-1',
 			endpoint: 'http://localhost:8000',
+			credentials: { accessKeyId: 'local', secretAccessKey: 'local' },
 		});
-		docClient = new AWS.DynamoDB.DocumentClient();
 	});
 
 	context('GET', () => {
@@ -29,17 +29,29 @@ describe('penaltyGroups', () => {
 					.expect(200)
 					.expect('Content-Type', 'application/json; charset=utf-8');
 
-				expect(resp.body.ID).toEqual(groupId);
-				expect(resp.body.Payments.FPN.PaymentRef).toBe('REF12345');
-				expect(resp.body.Payments.FPN.AuthCode).toBe('1234TBD');
-				expect(resp.body.Payments.FPN.PaymentAmount).toBe(800);
-				expect(resp.body.Payments.FPN.PaymentDate).toBe(1519300376667);
-				expect(resp.body.Payments.FPN.PaymentStatus).toBe('UNPAID');
-				expect(resp.body.Payments.IM.PaymentRef).toBe('RJF12345');
-				expect(resp.body.Payments.IM.AuthCode).toBe('1234TBG');
-				expect(resp.body.Payments.IM.PaymentAmount).toBe(80);
-				expect(resp.body.Payments.IM.PaymentDate).toBe(1519300376667);
-				expect(resp.body.Payments.IM.PaymentStatus).toBe('PAID');
+				expect(resp.body).toEqual({
+					ID: groupId,
+					Payments: {
+						FPN: {
+							PaymentRef: 'REF12345',
+							AuthCode: '1234TBD',
+							PaymentAmount: 800,
+							PaymentDate: 1700000000,
+							PaymentMethod: 'CARD',
+							PaymentStatus: 'PAID',
+							penaltyIds: ['820500000881_FPN', '820500000882_FPN'],
+						},
+						IM: {
+							PaymentRef: 'RJF12345',
+							AuthCode: '1234TBG',
+							PaymentAmount: 80,
+							PaymentDate: 1700000000,
+							PaymentMethod: 'CARD',
+							PaymentStatus: 'PAID',
+							penaltyIds: ['0000011123456_IM'],
+						},
+					},
+				});
 			});
 		});
 		context('an individual penalty group payment record that doesn\'t exist', () => {

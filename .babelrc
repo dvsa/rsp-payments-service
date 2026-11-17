@@ -4,11 +4,16 @@
 		"@babel/env",
 		{
 		  "targets": {
-			"node": "16.16"
+			"node": "20"
 		  },
 		  "useBuiltIns": "entry",
 		  "corejs": "3"
 		}
 	  ]
-	]
+	],
+	"env": {
+		"coverage": {
+			"plugins": ["istanbul"]
+		}
+	}
 }

@@ -17,3 +17,8 @@ npm-debug.log
 .env
 dist
 .idea
+.aws-sam/
+coverage/
+.nyc_output/
+integration-reports/
+.integration-local.lock
