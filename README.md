@@ -3,9 +3,10 @@
 ## Node 24 runtime upgrade
 
 This branch upgrades the established Node 20 baseline to Node 24, the open-source
-Serverless fork (OSLS) and AWS SDK v3. Payment business behaviour, REST routes and
-accepted defects are preserved. This is not a Serverless Starter rewrite or an
-upgrade of live infrastructure.
+Serverless fork (OSLS) and AWS SDK v3. The runtime upgrade preserves payment
+business behaviour, REST routes and accepted defects; the individual payment fixes
+below are separate corrections on top of that baseline. This is not a Serverless
+Starter rewrite or an upgrade of live infrastructure.
 
 Startup loads `.env` and runs Babel/watch/Offline in ignored `build/`. SDK v3 uses
 the normal profile provider chain for real Lambda calls; the old credential-export
@@ -17,6 +18,22 @@ calls.** There is no shared Lambda factory, synthetic Lambda server or productio
 client redirection. Read-only payment/group GETs access only DynamoDB Local.
 Creating/deleting payments or groups can mutate downstream Documents resources.
 Obtain explicit approval before those checks.
+
+### Individual payment updates and deletion
+
+The PUT handler and payment update service now complete asynchronously. A
+successful update waits for DynamoDB and returns HTTP 200 with the full saved
+record. Validation failures return 405 without writing; rejected database writes,
+including missing records and unchanged statuses, return the existing controlled
+500 error instead of escaping the response boundary.
+
+PUT retains its existing conditional-write guards and only changes the payment
+record. It does not invoke Documents or issue a refund.
+
+Deleting a missing individual payment now returns HTTP 404 with
+`{"err":"Payment not found"}` instead of dereferencing absent DynamoDB
+attributes. It logs the not-found outcome without logging a successful deletion
+or invoking Documents. Existing paid/unpaid deletion behaviour is unchanged.
 
 ### First run
 
@@ -77,9 +94,8 @@ configuration. Only the local `offline` command bypasses authorization with
 `--noAuth`. Do not expose local services to an untrusted network; DynamoDB Local
 may listen beyond loopback.
 
-Offline retains `reloadHandler: true` from the accepted baseline. Fresh workers
-avoid reuse after the known PUT timeout. This is a local emulation setting, not
-a production handler fix.
+Offline retains `reloadHandler: true` from the accepted baseline. This is a
+local emulation setting, independent of the PUT handler fix.
 
 Check these ports and their process owners before starting; do not reuse an old
 API or stop somebody else's service. After `Server ready`, inspect actual seeds:
@@ -166,7 +182,7 @@ text table displays 0%. There is no configured type-check command.
 CI runs the same coverage gate and local-tooling tests with Node 24/npm 11.
 Integration tests are separate, manual and blocked in CI.
 
-Verified locally on Node 24.22.2/npm 11.19.1:
+Verified runtime-upgrade baseline on Node 24.22.2/npm 11.19.1:
 
 | Check | Result |
 | --- | --- |
@@ -266,12 +282,6 @@ verifies downstream document state.
 
 ### Existing defects and operational limits
 
-- Individual updates return 200 with `{}` before the DynamoDB promise settles;
-  asynchronous write failures escape the existing catch. Synchronous failures
-  still return the existing 500 response at service level. The exported PUT
-  handler is non-async and never calls its callback: locally both valid and
-  invalid requests actually return an empty HTTP 504. This accepted known-defect
-  baseline checks both the exact timeout and the persisted/no-write outcome.
 - The group-creation handler catches synchronous exceptions, not rejected service
   promises. Malformed JSON also escapes some existing handler error blocks.
 - Missing individual payments return 200 with `{}`; missing groups return 404.

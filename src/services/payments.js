@@ -251,12 +251,20 @@ export default class Payments {
 			return error;
 		}
 
+		const deletedData = data.Attributes;
+
+		if (!deletedData) {
+			logError('DeletePaymentNotFound', { id });
+			return createResponse({
+				body: { err: 'Payment not found' },
+				statusCode: 404,
+			});
+		}
+
 		logInfo('DeletePaymentRecordSuccess', {
 			id,
 			paymentStatusBeforeDeletion: 'UNPAID',
 		});
-
-		const deletedData = data.Attributes;
 
 		const paymentInfo = {
 			PenaltyStatus: deletedData.PenaltyStatus,
@@ -299,7 +307,7 @@ export default class Payments {
 		return response;
 	}
 
-	update(id, body) {
+	async update(id, body) {
 		const params = {
 			TableName: this.tableName,
 			Key: { ID: id },
@@ -335,7 +343,7 @@ export default class Payments {
 		}
 
 		try {
-			const result = this.db.update(params).promise();
+			const result = await this.db.update(params).promise();
 			logInfo('UpdatePaymentSuccess', {
 				payment: body,
 			});
